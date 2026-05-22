@@ -1,0 +1,4 @@
+.env
+node_modules/
+scraped-ads.json
+docs/assets/ads/

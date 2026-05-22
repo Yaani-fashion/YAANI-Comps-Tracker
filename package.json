@@ -1,0 +1,14 @@
+{
+  "name": "yaani-ad-radar",
+  "version": "1.0.0",
+  "description": "Competitor ad intelligence dashboard for Yaani — scrapes Meta Ads Library, analyses with Claude, publishes via GitHub Pages",
+  "main": "index.js",
+  "scripts": {
+    "scrape": "node index.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.27.0",
+    "dotenv": "^16.4.5",
+    "playwright": "^1.44.0"
+  }
+}
