@@ -8,10 +8,15 @@ require('dotenv').config({ override: true });
 const { runScraper }              = require('./scraper');
 const { analyzeAds, generateOverallStrategy } = require('./analyzer');
 const { writeDashboard }          = require('./dashboard');
+const { sendIntelEmail }          = require('./notifier');
 const fs   = require('fs');
 const path = require('path');
 
-const required = ['ANTHROPIC_API_KEY'];
+const isCI = process.env.CI === 'true';
+
+const required = isCI
+  ? ['ANTHROPIC_API_KEY', 'GMAIL_USER', 'GMAIL_APP_PASSWORD', 'NOTIFY_EMAIL']
+  : ['ANTHROPIC_API_KEY'];
 const missing  = required.filter(k => !process.env[k]);
 if (missing.length) {
   console.error('\n  ERROR: Missing env vars:', missing.join(', '));
@@ -58,6 +63,17 @@ async function run() {
   console.log('[3/3] Building dashboard...');
   const outPath = writeDashboard(analyses, strategy);
   console.log(`  Dashboard → ${outPath}\n`);
+
+  // ── 4. Email (CI only) ─────────────────────────────────────────────────────
+  if (isCI && process.env.GMAIL_USER) {
+    console.log('[4/4] Sending email summary...');
+    try {
+      await sendIntelEmail(analyses, strategy);
+      console.log(`  Email sent to ${process.env.NOTIFY_EMAIL}\n`);
+    } catch (err) {
+      console.error('  ERROR sending email:', err.message);
+    }
+  }
 
   console.log('╔══════════════════════════════════════╗');
   console.log('║  Done. Open docs/index.html to view. ║');

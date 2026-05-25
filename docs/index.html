@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yaani — Ad Radar</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: #0d0d0d; color: #d4d4d4; min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: #111; border-bottom: 1px solid #1e1e1e;
+      padding: 20px 40px; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    }
+    .brand { font-family: Georgia, serif; font-size: 24px; letter-spacing: 6px; color: #fff; font-weight: normal; }
+    .brand-sub { font-size: 12px; color: #555; }
+    .updated { font-size: 11px; color: #333; margin-left: auto; }
+
+    /* ── Nav tabs ── */
+    nav {
+      background: #111; border-bottom: 1px solid #1e1e1e;
+      padding: 0 40px; display: flex;
+    }
+    nav button {
+      background: none; border: none; border-bottom: 2px solid transparent;
+      color: #555; cursor: pointer; font-size: 13px; padding: 14px 18px;
+      white-space: nowrap; transition: color 0.15s, border-color 0.15s;
+    }
+    nav button:hover { color: #aaa; }
+    nav button.active { color: #e8b84b; border-bottom-color: #e8b84b; }
+
+    /* ── Layout ── */
+    .container { max-width: 1300px; margin: 0 auto; padding: 36px 40px; }
+    .tab { display: none; }
+    .tab.active { display: block; }
+
+    /* ── Stats bar ── */
+    .stats { display: flex; gap: 14px; margin-bottom: 32px; flex-wrap: wrap; }
+    .stat {
+      background: #141414; border: 1px solid #1e1e1e; border-radius: 8px;
+      padding: 14px 20px; flex: 1; min-width: 110px;
+    }
+    .stat-value { font-size: 28px; font-weight: 700; color: #fff; }
+    .stat-label { font-size: 10px; color: #555; margin-top: 2px; letter-spacing: 1px; text-transform: uppercase; }
+
+    /* ── Brand section ── */
+    .brand-section {
+      background: #111; border: 1px solid #1e1e1e;
+      border-radius: 10px; margin-bottom: 14px; overflow: hidden;
+    }
+    .brand-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 18px 24px; cursor: pointer; user-select: none;
+      transition: background 0.15s;
+    }
+    .brand-header:hover { background: #161616; }
+    .brand-title-row { display: flex; align-items: baseline; gap: 14px; }
+    .brand-name  { font-size: 17px; font-weight: 700; color: #fff; }
+    .brand-stats { font-size: 12px; color: #555; }
+    .chevron { font-size: 12px; color: #444; transition: transform 0.2s; }
+    .chevron.open { transform: rotate(180deg); }
+
+    .brand-body { padding: 0 24px 24px; display: none; }
+    .brand-body.open { display: block; }
+
+    /* ── Analysis grid ── */
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px; margin-bottom: 16px;
+    }
+    .analysis-card {
+      background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 8px; padding: 14px 16px;
+    }
+    .analysis-card.weakness { border-color: #2a1a1a; }
+    .analysis-label {
+      font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+      color: #444; margin-bottom: 6px;
+    }
+    .analysis-value { font-size: 13px; color: #bbb; line-height: 1.6; }
+
+    /* ── Patterns ── */
+    .patterns-row { margin-bottom: 16px; }
+    .patterns-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: #444; margin-bottom: 8px; }
+    .patterns-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pattern-tag {
+      background: #1a1a1a; border: 1px solid #252525; border-radius: 20px;
+      font-size: 12px; color: #888; padding: 4px 12px;
+    }
+
+    /* ── Yaani angle ── */
+    .yaani-angle {
+      background: #0a1a0c; border: 1px solid rgba(90,158,111,0.25);
+      border-radius: 8px; padding: 16px 18px; margin-bottom: 20px;
+    }
+    .yaani-angle-label {
+      font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+      color: #5a9e6f; margin-bottom: 8px;
+    }
+    .yaani-angle-body { font-size: 13px; color: #7dc893; line-height: 1.7; }
+
+    /* ── Ads grid ── */
+    .ads-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: #333; margin-bottom: 12px; }
+    .ads-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+
+    .ad-card {
+      background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 8px;
+      overflow: hidden; transition: border-color 0.15s;
+    }
+    .ad-card:hover { border-color: #2a2a2a; }
+    .ad-card.proven { border-color: #1a2e1a; }
+    .ad-card.proven:hover { border-color: #2a4a2a; }
+
+    .ad-media { position: relative; background: #0a0a0a; }
+    .ad-img   { width: 100%; display: block; max-height: 280px; object-fit: cover; }
+    .ad-video { width: 100%; display: block; max-height: 280px; background: #000; }
+    .no-media {
+      height: 120px; display: flex; align-items: center; justify-content: center;
+      background: #111;
+    }
+    .video-wrap { position: relative; }
+
+    .media-tag {
+      position: absolute; bottom: 8px; left: 8px;
+      background: rgba(0,0,0,0.75); color: #666;
+      font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 4px;
+    }
+    .video-tag { color: #e8b84b; }
+
+    .ad-body { padding: 14px 16px; }
+    .ad-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .ad-duration {
+      font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: #555;
+    }
+    .ad-duration.proven-badge { color: #5a9e6f; }
+    .star {
+      font-size: 10px; color: #5a9e6f; background: #0f200f;
+      padding: 2px 8px; border-radius: 20px;
+    }
+    .ad-copy {
+      font-size: 12px; color: #888; line-height: 1.65;
+      max-height: 130px; overflow: hidden;
+      -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+      mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+    }
+    .ad-link {
+      display: inline-block; margin-top: 10px; font-size: 11px; color: #444;
+      text-decoration: none; border-bottom: 1px solid #222;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .ad-link:hover { color: #aaa; border-color: #555; }
+
+    /* ── Strategy tab ── */
+    .strategy-box {
+      background: #111; border: 1px solid #1e1e1e; border-radius: 10px;
+      padding: 32px 36px; max-width: 860px;
+    }
+    .strategy-box p { font-size: 14px; color: #999; line-height: 1.8; margin: 12px 0; }
+    .strategy-box strong { color: #ddd; }
+    .strategy-box h2, .strategy-box h3 {
+      color: #e8b84b; font-size: 16px; margin: 24px 0 10px;
+    }
+
+    .error-note { font-size: 13px; color: #555; padding: 12px 0; }
+
+    @media (max-width: 640px) {
+      .header, nav, .container { padding-left: 16px; padding-right: 16px; }
+      .updated { margin-left: 0; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <span class="brand">YAANI</span>
+  <span class="brand-sub">Ad Radar</span>
+  <span class="updated">Updated 25 May 2026 at 09:48 pm IST</span>
+</header>
+
+<nav>
+  <button class="active" onclick="showTab('competitors', this)">Competitors</button>
+  <button onclick="showTab('strategy', this)">Yaani Strategy</button>
+</nav>
+
+<div class="container">
+
+  <!-- Competitors tab -->
+  <div id="tab-competitors" class="tab active">
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value">8</div>
+        <div class="stat-label">Brands tracked</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">79</div>
+        <div class="stat-label">Ads collected</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">49</div>
+        <div class="stat-label">Proven 6+ months</div>
+      </div>
+    </div>
+    
+  <div class="brand-section" id="brand-0">
+    <div class="brand-header" onclick="toggleBrand(0)">
+      <div class="brand-title-row">
+        <span class="brand-name">The Drip Project</span>
+        <span class="brand-stats">5 ads · 0 proven</span>
+      </div>
+      <span class="chevron" id="chev-0">▼</span>
+    </div>
+
+    <div class="brand-body" id="body-0">
+      
+      <div class="analysis-grid">
+        <div class="analysis-card">
+          <div class="analysis-label">What they're selling</div>
+          <div class="analysis-value">Affordable luxury men's jewellery with premium 14k gold plating and AAA stones that makes you look expensive.</div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-label">Dominant hook</div>
+          <div class="analysis-value">Status upgrade through shine — 'stop wearing basic' and let the jewellery speak for you before you do.</div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-label">What's working</div>
+          <div class="analysis-value">They're tapping into the aspirational dresser who wants to look wealthy and make an impression — the specs (14k, AAA) give permission to buy because it sounds premium, and the discount (40% off) removes purchase hesitation.</div>
+        </div>
+        <div class="analysis-card weakness">
+          <div class="analysis-label">Their weakness</div>
+          <div class="analysis-value">Everything is about the surface — shine, specs, statements. There's no substance, no relationship with the product beyond 'it looks expensive'. It's jewellery as costume, not as self-expression. They're also not honest about longevity or material truth (gold plating will wear off).</div>
+        </div>
+      </div>
+
+      <div class="patterns-row">
+        <div class="patterns-label">Messaging patterns</div>
+        <div class="patterns-list">
+          <span class="pattern-tag">Aspiration through material specs (14k gold plating, AAA stones, precision-cut)</span><span class="pattern-tag">Luxury made accessible — constantly reinforcing affordability + premium look</span><span class="pattern-tag">External validation language — 'shine speaks before you do', 'bold statement', 'show the world'</span>
+        </div>
+      </div>
+
+      <div class="yaani-angle">
+        <div class="yaani-angle-label">Yaani's angle against The Drip Project</div>
+        <div class="yaani-angle-body">Position brass as the anti-plating move — 'Doesn't flake. Doesn't fake it.' Target the guy who's tired of jewellery that degrades and wants something real that ages with him, not against him. While they sell shine that fades, Yaani sells material honesty and longevity. Creative direction: show close-ups of aged brass (beautiful patina) vs. flaked gold plating. Copy: 'They plate it. We own it. Brass that stays real.' This isn't about looking rich — it's about being real.</div>
+      </div>
+      
+
+      <div class="ads-label">Ads (sorted by impressions)</div>
+      <div class="ads-grid">
+  <div class="ad-card">
+    <div class="ad-media">
+      <img src="assets/ads/the-drip-project/ad-0.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">1mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 976565118649055 8 ads use this creative and text Open Drop-down ​ See summary details Drip Project Sponsored Stop wearing basic. Upgrade your wrist with precision-cut AAA stones and premium 14k gold plating. The shine speaks before you do.</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/the-drip-project/ad-1.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-1.fna.fbcdn.net/o1/v/t2/f2/m412/AQPsImOxjmzAhQVpeLJAHbZR-PCdRggxgxkWDo3_OBjEp1LazfqoyG7Kqr42O2IuVwfCeqdqxIuM0PFZq8Y5k1oKjO9AzvW2LPHBuSzwKw.mp4?_nc_cat=105&amp;_nc_oc=AdqPL2usFSFY_vNDXti9WuxqNL4eFxiCgUBpW7b8yIJlKxTfqzesYLOWIeTsAmMuXhQghKkZ6M3GezevoPMMPN6i&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-1.fna.fbcdn.net&amp;_nc_ohc=EGyhIwHKgt8Q7kNvwFeZNsP&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6OTM2NDU3OTU5MzkyNzE2LCJhc3NldF9hZ2VfZGF5cyI6MzQsInZpX3VzZWNhc2VfaWQiOjEwNzk5LCJkdXJhdGlvbl9zIjoxOSwidXJsZ2VuX3NvdXJjZSI6Ind3dyJ9&amp;ccb=17-1&amp;_nc_gid=V2XbSR4my-2BxTfSVCnk9w&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af4QK5_vQ3NP9lYryJ9VH1XThQ6OErSi1Xm70JWs1_yWaw&amp;oe=6A1A3321" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">1mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 1337355898286269 6 ads use this creative and text Open Drop-down ​ See summary details Drip Project Sponsored Forty. Flippin'. Percent. Off. The Forty Flippin' Sale is live — up to 40% off men's jewellery, designed in-house, inspired by streetwear and hip-hop culture. No code needed, just shop. 12-month guarantee on every piece. This is accessible luxury — now even more so. 0:00 / 0:19</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media">
+      <img src="assets/ads/the-drip-project/ad-2.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">1mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 2313853732438285 This ad has multiple versions ​ Open Drop-down ​ See ad details Drip Project Sponsored DRIPPROJECT.CO Round Cut Tennis Chain in White Gold - 5mm Globally acclaimed, DRIP PROJECT is an Indian-based brand that draws inspiration from multiple cultures. With our motto, Luxury made affordable, we inspire you to show the world your inner shine. We exist to express that inner shine through high quality handcrafted jewellery. Shop Now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media">
+      <img src="assets/ads/the-drip-project/ad-3.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">1mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 2025866781618721 This ad has multiple versions ​ Open Drop-down ​ See ad details Drip Project Sponsored DRIPPROJECT.CO Classic Cuban Bracelet in White Gold - 8.5mm Elevate your style with our best-selling luxury pieces from the Drip Project category. Discover must-have jewellery that exudes premium quality and sophistication, making a bold statement wherever you go! Shop Now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media">
+      <img src="assets/ads/the-drip-project/ad-5.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">1mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 796072063312582 2 ads use this creative and text Open Drop-down ​ See summary details Drip Project Sponsored Stop wearing basic. Upgrade your wrist with precision-cut AAA stones and premium 14k gold plating. The shine speaks before you do.</div>
+      
+    </div>
+  </div></div>
+    </div>
+  </div>
+  <div class="brand-section" id="brand-1">
+    <div class="brand-header" onclick="toggleBrand(1)">
+      <div class="brand-title-row">
+        <span class="brand-name">Black Mamba Jewellery</span>
+        <span class="brand-stats">5 ads · 0 proven</span>
+      </div>
+      <span class="chevron" id="chev-1">▼</span>
+    </div>
+
+    <div class="brand-body" id="body-1">
+      
+      <div class="analysis-grid">
+        <div class="analysis-card">
+          <div class="analysis-label">What they're selling</div>
+          <div class="analysis-value">Premium-looking men's jewellery with anti-tarnish plating in multiple finishes (black, rhodium, gold) that's affordable and versatile for everyday wear.</div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-label">Dominant hook</div>
+          <div class="analysis-value">Built for men who don't need attention to feel put together — emphasis on effortless style and understated confidence.</div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-label">What's working</div>
+          <div class="analysis-value">The 'doesn't pick a side' versatility message resonates with Indian men who move between Western and ethnic wear — plus the anti-aspirational tone appeals to Gen Z guys who want to look good without appearing like they're trying too hard.</div>
+        </div>
+        <div class="analysis-card weakness">
+          <div class="analysis-label">Their weakness</div>
+          <div class="analysis-value">They're selling plated jewellery while avoiding the honest conversation about longevity — all that 'anti-tarnish' messaging is defensive, suggesting the product WILL tarnish, just not immediately. Also, heavy discounting (70% off, BOGO) undermines the premium positioning.</div>
+        </div>
+      </div>
+
+      <div class="patterns-row">
+        <div class="patterns-label">Messaging patterns</div>
+        <div class="patterns-list">
+          <span class="pattern-tag">Versatility positioning: 'pairs with t-shirt, kurta, or suit' — works across contexts</span><span class="pattern-tag">Anti-aspiration language: 'don't need attention', 'just wear what works' — targets guys tired of try-hard fashion</span><span class="pattern-tag">Premium without the price: emphasizes quality materials and finish while highlighting affordability/discounts</span>
+        </div>
+      </div>
+
+      <div class="yaani-angle">
+        <div class="yaani-angle-label">Yaani's angle against Black Mamba Jewellery</div>
+        <div class="yaani-angle-body">Own the material truth while they hide behind plating claims. Ad hook: 'Not plated. Not pretending. Just brass that gets better with time.' Then show side-by-side: their flaking plated chain vs your aged brass patina. Positioning: while they're selling 'anti-tarnish' (a promise with an expiry date), you're selling 'ages honest' — brass that doesn't pretend to be something else and actually looks better after months of wear. Target the same 'effortless style' guy but with material honesty as the confidence move.</div>
+      </div>
+      
+
+      <div class="ads-label">Ads (sorted by impressions)</div>
+      <div class="ads-grid">
+  <div class="ad-card">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/black-mamba-jewellery/ad-0.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-3.fna.fbcdn.net/o1/v/t2/f2/m412/AQNnrpuO82u8RfqWiBK-dujRqqGxs9d7DSmO3HP368fv17AdBHBq9HyJbk-PjtaGS8cy_QSjCTf3HlixlHRU0ta1QVMZ6my-ATq7FOsUXg.mp4?_nc_cat=100&amp;_nc_oc=AdqNU47VSPA155igaxfgHt-M8JFVk6qybG9kydCeFcPWIhIwFcF_Ju2PbeC27UHgXNZMxsx5gbNyAr7S-du1Ltkw&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-3.fna.fbcdn.net&amp;_nc_ohc=VNFeMStmFEMQ7kNvwHuzeCD&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6MTk0MzE3ODIxMjk1MTg5MiwiYXNzZXRfYWdlX2RheXMiOjU0LCJ2aV91c2VjYXNlX2lkIjoxMDc5OSwiZHVyYXRpb25fcyI6MTUsInVybGdlbl9zb3VyY2UiOiJ3d3cifQ%3D%3D&amp;ccb=17-1&amp;_nc_gid=UjvFPS9uM0RJtHy29CeZWQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af7OWZRaMqbtp7ZPM0Dat_k3i7IJ_TPszjw9wx8Aylibsg&amp;oe=6A1A6296" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">0mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 977606874960908 ​ 2 ads use this creative and text Open Drop-down ​ See summary details Black Mamba Jewellery Sponsored Elevate your elegance with our curated collection of 18K gold-plated bracelet — where timeless design meets luxurious luster. Each piece is crafted to shine, adding a radiant finishing touch to every look, from everyday chic to full-on glam. Explore the embrace of gold without the heavy investment, and let each shimmering detail reflect your individuality and grace. Discover the sparkle that lasts. 0:00 / 0:15</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media">
+      <img src="assets/ads/black-mamba-jewellery/ad-1.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">0mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 4290432291205453 ​ Open Drop-down ​ See ad details Black Mamba Jewellery Sponsored Built for men who don't need attention to feel put together. Men's Jewellery in Black, Rhodium, or Gold. Sits flat on your body. Pairs with a t-shirt, a kurta, or a suit. Doesn't pick a side. Some men spend years figuring out their style. Others just wear what works. Upto 70% OFF BLACKMAMBAJEWELLERY.COM Upto 70% OFF Explore premium men’s jewellery at Black Mamba – magnetic lock bracelets, Cuban chains, natural stone jewellery, and bold unisex designs. Designed for modern Indian men. Shop online wi</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/black-mamba-jewellery/ad-2.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-4.fna.fbcdn.net/o1/v/t2/f2/m412/AQOKDc-neONbGb5HHKE9wtr_xqbmZ-Jv4QuvbXYmi9H3bAk0k1UJYWVYB_Pd21Cen05umSrrEsup8wQYJuzCnDerqw0nv2QGW4Mb5cvKCg.mp4?_nc_cat=104&amp;_nc_oc=AdrqY2negRuT8x2S-5xe7hDET8-PKS9h8xT74jBWO6NJfoNPA9GxdqBHxo44zFrynr7He109j5WTzzvd8PcH0sI4&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-4.fna.fbcdn.net&amp;_nc_ohc=kILkvM_zXgQQ7kNvwGTHa0U&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6MjIxNjk2NzEyMjQ1MDA0MywiYXNzZXRfYWdlX2RheXMiOjQsInZpX3VzZWNhc2VfaWQiOjEwNzk5LCJkdXJhdGlvbl9zIjoxNywidXJsZ2VuX3NvdXJjZSI6Ind3dyJ9&amp;ccb=17-1&amp;_nc_gid=UjvFPS9uM0RJtHy29CeZWQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af4oi4_HO48DRlYKoBSDPsRGBtbuoMO5N1iigkF7e794AQ&amp;oe=6A1A3746" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">0mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 1533508828107861 ​ Open Drop-down ​ See ad details Black Mamba Jewellery Sponsored Built for men who don't need attention to feel put together. Men's Jewellery in Black, Rhodium, or Gold. Sits flat on your body. Pairs with a t-shirt, a kurta, or a suit. Doesn't pick a side. Some men spend years figuring out their style. Others just wear what works. Buy 1 Get 1 Free 0:00 / 0:18 WWW.BLACKMAMBAJEWELLERY.COM Buy 1 Get 1 Free Shop now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media">
+      <img src="assets/ads/black-mamba-jewellery/ad-3.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">0mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 1703210800684511 ​ Open Drop-down ​ See ad details Black Mamba Jewellery Sponsored Built for men who don't need attention to feel put together. Men's Jewellery in Black, Rhodium, or Gold. Sits flat on your body. Pairs with a t-shirt, a kurta, or a suit. Doesn't pick a side. Some men spend years figuring out their style. Others just wear what works. Buy 1 Get 1 Free BLACKMAMBAJEWELLERY.COM Buy 1 Get 1 Free Shop all men’s jewellery by Black Mamba – magnetic lock bracelets, bold chains, sculpted rings, minimal pendants, and engraved pieces. Crafted in stainless steel and matte blac</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media">
+      <img src="assets/ads/black-mamba-jewellery/ad-4.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">0mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 914043758346064 ​ Open Drop-down ​ See ad details Black Mamba Jewellery Sponsored Premium jewellery that actually looks premium. Built for everyday wear, designed to elevate every outfit. From statement chains to minimal bracelets, every piece is crafted with high-quality materials, anti-tarnish plating, and a premium finish that lasts. No overpriced luxury markups. Just jewellery that looks expensive, feels premium, and gets noticed. 🔥 Buy 3 for ₹1,999 🚚 Free Shipping 💧 Anti-Tarnish &amp; Everyday Wear Join 2,00,000+ people already wearing Black Mamba. BLACKMAMBAJEWELLERY.COM Jo</div>
+      
+    </div>
+  </div></div>
+    </div>
+  </div>
+  <div class="brand-section" id="brand-2">
+    <div class="brand-header" onclick="toggleBrand(2)">
+      <div class="brand-title-row">
+        <span class="brand-name">Miso by Sonia</span>
+        <span class="brand-stats">30 ads · 30 proven</span>
+      </div>
+      <span class="chevron" id="chev-2">▼</span>
+    </div>
+
+    <div class="brand-body" id="body-2">
+      
+      <div class="analysis-grid">
+        <div class="analysis-card">
+          <div class="analysis-label">What they're selling</div>
+          <div class="analysis-value">Trendy, pop-culture-inspired men's jewellery (Batman, Berserk, spiritual symbols) that's waterproof, anti-tarnish, and requires no commitment (clip-on earrings, no piercing).</div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-label">Dominant hook</div>
+          <div class="analysis-value">Permission-based hooks that lower the barrier: 'Rock the trend without the needle,' 'For guys who don't do gold,' 'You won't find anywhere else' — making jewellery accessible for hesitant first-timers.</div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-label">What's working</div>
+          <div class="analysis-value">They're converting jewellery skeptics by removing friction (no piercing, no tarnish fears, pop culture familiarity) and wrapping functional benefits in aspirational social outcomes (compliments, confidence, standing out) — it's jewellery for guys who need permission and proof.</div>
+        </div>
+        <div class="analysis-card weakness">
+          <div class="analysis-label">Their weakness</div>
+          <div class="analysis-value">Everything is about convincing and converting the unconvinced — there's no depth, no material honesty, no connection to the guy who already gets it. It's all hype, features, and fandom. They're chasing trends, not building taste. Brass isn't even mentioned — they're hiding behind 'stainless steel' and '925 silver' as if material shame is the default.</div>
+        </div>
+      </div>
+
+      <div class="patterns-row">
+        <div class="patterns-label">Messaging patterns</div>
+        <div class="patterns-list">
+          <span class="pattern-tag">Heavy reliance on product features as benefits: waterproof, anti-tarnish, lifetime warranty repeated like mantras</span><span class="pattern-tag">Pop culture and fandom positioning: Batman, Berserk, Lord Shiva — jewellery as identity signalling, not just style</span><span class="pattern-tag">Scarcity and urgency: 'Limited stock,' 'Restocked,' 'Exclusive' — constant FOMO triggers</span><span class="pattern-tag">Social proof via testimonials: 'I get compliments like never before,' 'My men was so happy' — external validation as the win</span><span class="pattern-tag">Feature-forward language: stainless steel, 925 silver called out explicitly — material = credibility</span>
+        </div>
+      </div>
+
+      <div class="yaani-angle">
+        <div class="yaani-angle-label">Yaani's angle against Miso by Sonia</div>
+        <div class="yaani-angle-body">Position Yaani as the antidote to trend-chasing: 'No Batman logos. No anti-tarnish promises you won't need. Just brass that gets better, not louder.' Target the guy who's tired of jewellery that screams for attention or needs a superhero logo to feel valid. Lead with material honesty and aging as a feature: show patina, show brass darkening over time, frame it as earning your style, not buying it. Hook: 'For guys who don't need jewellery explained to them.' Counter their scarcity with permanence: 'Not limited edition. Just limited ego.' Make Miso feel like jewellery with training wheels — Yaani is what you graduate to.</div>
+      </div>
+      
+
+      <div class="ads-label">Ads (sorted by impressions)</div>
+      <div class="ads-grid">
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/miso-by-sonia/ad-0.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-1.fna.fbcdn.net/o1/v/t2/f2/m69/AQOKblHJuTBEydThFw7izUsXIJCs0Sk5qlM0eYZiToLG4Z0t3C4P7cJGs_Bpjaj_2UsLjgDneCzWgYYPLbBD5Yyc.mp4?strext=1&amp;_nc_cat=103&amp;_nc_oc=Ado-akZg97F2BJfZM_ro6GZxPOnqip_Toz04mGiX3cPAIaoLPFYf1cKUPsGlK0s_nw8BIMnaEkRipbIPgtYp3nNs&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-1.fna.fbcdn.net&amp;_nc_ohc=hnnl9Tz8lmMQ7kNvwG8UEl6&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6MTA0NDUwODEzNDIzOTIyNSwiYXNzZXRfYWdlX2RheXMiOjM5NiwidmlfdXNlY2FzZV9pZCI6MTA3OTksImR1cmF0aW9uX3MiOjUsInVybGdlbl9zb3VyY2UiOiJ3d3cifQ%3D%3D&amp;ccb=17-1&amp;_nc_gid=XOPfSzkTrVfGzfvhSviJoQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af77Z4twWI2BpputNyB-rxSfCl0_n-ck2CEYsX89ASr4Hw&amp;oe=6A1A2EA3" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">13mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 9620462184711984 Open Drop-down ​ See ad details misobysonia Sponsored &quot;I've never worn a bracelet that made such an impact. It’s subtle but screams class. From the gym to meetings, this MISO bracelet always adds the perfect touch. I get compliments like never before, and I know it's because of the sleek, refined design.&quot; ⭐⭐⭐⭐⭐ – Aman S., Delhi 👉🏻 Unbreakable Style, Built to Last Just like your best suit, this bracelet fits seamlessly into any situation — but without the maintenance. Made from premium 316L stainless steel, it feels like the armor of a knight, ready for whateve</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media">
+      <img src="assets/ads/miso-by-sonia/ad-1.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">10mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 757216406806226 This ad has multiple versions ​ Open Drop-down ​ See ad details misobysonia Sponsored Attention Men! - Our Exclusive Best Sellers are in Stock for a Limited Time. Here's what our customers have to say about our best sellers. ⭐⭐⭐⭐⭐ &quot; It was so much worth the wait, and the quality of the chain is over everything &gt;&gt;&gt;&gt;&gt;&gt; My men was so happy &quot; - Nandini. ⭐⭐⭐⭐⭐ &quot; Makes sense why it's almost out of stock&quot; - Sagar Malhotra ⭐⭐⭐⭐⭐ &quot; That look is worth every penny&quot; - Sachin Why do 20K+ Men love miso? • Unique Designs that Men's want • Lifetime warranty on Many products • Wa</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media">
+      <img src="assets/ads/miso-by-sonia/ad-3.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">16mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 471964389343803 Open Drop-down ​ See ad details misobysonia Sponsored Rock the trend without the needle! Check out our men's earrings, no piercing needed. 🙌 •Waterproof | Anti-tarnish • Easy to style • Fast Delivery 🚚 MISOBYSONIA.COM No Piercing Needed Limited Stock Shop Now Limited Stock MISOBYSONIA.COM No Piercing Needed Limited Stock Shop Now Limited Stock MISOBYSONIA.COM No Piercing Needed Limited Stock Shop Now Limited Stock MISOBYSONIA.COM No Piercing Needed Limited Stock Shop Now Limited Stock MISOBYSONIA.COM No Piercing Needed Limited Stock Shop Now Limited Stock MISOB</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media">
+      <img src="assets/ads/miso-by-sonia/ad-4.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">10mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1277873563794856 This ad has multiple versions ​ Open Drop-down ​ See ad details misobysonia Sponsored Rock the trend without the needle! Check out our men's earrings, no piercing needed. 🙌 •Waterproof | Anti-tarnish • Easy to style • Fast Delivery 🚚 MISOBYSONIA.COM MF DOOM Ring ❤ By 60K+ Men's Shop Now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/miso-by-sonia/ad-6.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-3.fna.fbcdn.net/o1/v/t2/f2/m560/AQMStTGmfTZLrrYrdWIyA1sMwDbPCzogOFDfiNiN7HnPpZPzbdL-sTErkfrwnF9ABM00fng6M5utILS42EJYgw761mSdmCR6i6M.mp4?_nc_cat=100&amp;_nc_oc=AdoyOe90vGSlGyT6-kkhgypKE9e_RjXSDQxAZNQKmRljaKlicVSUEfq-POeKKVWehnWhPTRLY6nqrtI7ges6JgUM&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-3.fna.fbcdn.net&amp;_nc_ohc=WbwmDdoDaHAQ7kNvwH-HAQv&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLmFzaWNfaHExX3NkX3Byb2dyZXNzaXZlIiwieHB2X2Fzc2V0X2lkIjoxNDgzMDc1NDUzMzYzODU5LCJhc3NldF9hZ2VfZGF5cyI6MjQsInZpX3VzZWNhc2VfaWQiOjEwNjgwLCJkdXJhdGlvbl9zIjoxNiwidXJsZ2VuX3NvdXJjZSI6Ind3dyJ9&amp;ccb=17-1&amp;_nc_gid=XOPfSzkTrVfGzfvhSviJoQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af7PmXfun27veJry3Y84x1vKYoKn5Z0lUIiCIBvgxrl3fA&amp;oe=6A1647FE" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">26mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1569940150527695  ads use this creative and text Open Drop-down ​ See summary details misobysonia Sponsored Bracelets which check off all 3 points! ✅ Waterproof ✅ Looks super clean and sleek ✅ Made to wear forever 0:00 / 0:17</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/miso-by-sonia/ad-8.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-6.fna.fbcdn.net/o1/v/t2/f2/m412/AQOjtonSs9XzyoEnr2e8LpQvwdJGWTYRX0RF8Mey4kenNzzW3x_aEsfmUQeoNm5hp1ctaAOSc6ImkI2vNxv62HU.mp4?_nc_cat=111&amp;_nc_oc=AdqFHiffHq8GqGDWXJBClKEHhnamphLctcwhlv7AtoNDAULAto-rpdxSJBOVzUL2SWmVt3RLzEVAS6YIB1N2I2E6&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-6.fna.fbcdn.net&amp;_nc_ohc=tqu4DgGZlqwQ7kNvwEiGYYC&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLmFzaWNfaHExX3NkX3Byb2dyZXNzaXZlIiwieHB2X2Fzc2V0X2lkIjoxMjYyMTMyMzQ1NTQ3ODkzLCJhc3NldF9hZ2VfZGF5cyI6NTQsInZpX3VzZWNhc2VfaWQiOjEwNjgwLCJkdXJhdGlvbl9zIjo3LCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;_nc_gid=XOPfSzkTrVfGzfvhSviJoQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af7thbItKFZkGxu1MgJ-vQdRN7AjMuoqdnyd2laOGjkpzg&amp;oe=6A1A2C9F" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">26mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1113031490005896 pen Drop-down ​ See ad details misobysonia Sponsored Rock the trend without the needle! Check out our men's earrings, no piercing needed. 🙌 •Waterproof | Anti-tarnish • Easy to style • Fast Delivery 🚚 0:00 / 0:07 MISOBYSONIA.COM Earrings Don't Require Piercing Anymore! 10k+ Men's Style Miso Shop now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media">
+      <img src="assets/ads/miso-by-sonia/ad-11.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">10mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 722014250695146 This ad has multiple versions ​ Open Drop-down ​ See ad details misobysonia Sponsored Gold chains for guys who “don’t do gold.” Turns out, you just needed the right collection. Meet Sonia’s new Golden Series: minimal, bold, and made to flex on every occasion—from last-minute meetings to weekend plans that never go as planned. Crafted in solid stainless steel (no green skin, no fake shine), each piece is built to keep up—whether you’re cuffing your sleeve, holding hands, or turning heads. Ready to wear gold like it was made for you? Why MISO jewelry? 💪 Strength i</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/miso-by-sonia/ad-12.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-6.fna.fbcdn.net/o1/v/t2/f2/m69/AQNY5uy8Vfb1si4gXYsdHynT7UvjY0PzJf1luFXWmT5MCGe6ziRLGc17QqlOltelADI1_9CRFrTumfSt5CsUoX70.mp4?strext=1&amp;_nc_cat=107&amp;_nc_oc=AdrdGTDiRKDxW73CaFJnyTudP4uROIpW989RQttyDEH9ZOIHUD5eNmrk4b8UOW2ZvxXord-s1KVh52-hPRtJJFr6&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-6.fna.fbcdn.net&amp;_nc_ohc=KDxzdpKnGKUQ7kNvwEE9iak&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6MTAxMTkyODQyNDQ1NTUyMiwiYXNzZXRfYWdlX2RheXMiOjM5MCwidmlfdXNlY2FzZV9pZCI6MTA3OTksImR1cmF0aW9uX3MiOjE0LCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;_nc_gid=XOPfSzkTrVfGzfvhSviJoQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af50NKX9ykeF_03zJMWGE2I-ulKcVgPGhTSMFBIhgNHlUg&amp;oe=6A1A40A7" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">13mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 992552575980539 Open Drop-down ​ See ad details misobysonia Sponsored Let everyone know you’re the BATMAN! 🦇 •⁠ ⁠Limited edition •⁠ ⁠Lifetime warranty •⁠ ⁠⁠waterproof •⁠ ⁠⁠anti tarnish •⁠ ⁠⁠hypoallergenic 0:00 / 0:15 MISOBYSONIA.COM misobysonia Shop now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media">
+      <img src="assets/ads/miso-by-sonia/ad-18.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">10mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 763432622779545 This ad has multiple versions ​ Open Drop-down ​ See ad details misobysonia Sponsored &quot;I've never worn a bracelet that made such an impact. It’s subtle but screams class. From the gym to meetings, this MISO bracelet always adds the perfect touch. I get compliments like never before, and I know it's because of the sleek, refined design.&quot; ⭐⭐⭐⭐⭐ – Aman S., Delhi 👉🏻 Unbreakable Style, Built to Last Just like your best suit, this bracelet fits seamlessly into any situation — but without the maintenance. Made from premium 316L stainless steel, it feels like the armor</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/miso-by-sonia/ad-21.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-2.fna.fbcdn.net/o1/v/t2/f2/m69/AQM5NS-P3MF85FYeuTmkHaj-NsbcZcIwZyZ43Nzppn18RPxVHdu96VPJG8LMqEOn9knolpa15Ze2fhQFanK9yjXm.mp4?strext=1&amp;_nc_cat=110&amp;_nc_oc=Ado46x0CrV-v2yQjMdRvQwUNm0Gk6DPWUGkl20C454qyZGW8B6I5bfKfWJ5GcIhwhUeEOZeCGmv6TLzgUF9srDEw&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-2.fna.fbcdn.net&amp;_nc_ohc=L_VyQdC9wm8Q7kNvwE_vWXy&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6NjUzMjUxOTY3NDQwNDA5LCJhc3NldF9hZ2VfZGF5cyI6NDA3LCJ2aV91c2VjYXNlX2lkIjoxMDc5OSwiZHVyYXRpb25fcyI6NCwidXJsZ2VuX3NvdXJjZSI6Ind3dyJ9&amp;ccb=17-1&amp;_nc_gid=XOPfSzkTrVfGzfvhSviJoQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af6vxUuljZujbQ2gESXH4RCltzx5qYgbKJADFfZx8NN6Xg&amp;oe=6A1A36AC" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">11mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1502144710757816 Open Drop-down ​ See ad details misobysonia Sponsored Let everyone know you’re the BATMAN! 🦇 •⁠ ⁠Limited edition •⁠ ⁠Lifetime warranty •⁠ ⁠⁠waterproof •⁠ ⁠⁠anti tarnish •⁠ ⁠⁠hypoallergenic 0:00 / 0:04 MISOBYSONIA.COM Unleash Your Inner Batman Anti-tarnish Shop now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media">
+      <img src="assets/ads/miso-by-sonia/ad-23.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">10mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 740060788385743 This ad has multiple versions ​ Open Drop-down ​ See ad details misobysonia Sponsored ⭐⭐⭐⭐⭐ – Rahul K., Bangalore &quot;This ring is everything. It feels like I’m wearing confidence on my hand. The compliments just don't stop, and people keep asking where I got it. It’s bold but minimal, and I never have to take it off — whether I’m at the gym or a night out, it's become part of my identity.&quot; Wear Your Confidence Like a silent handshake, this ring makes an impression the moment you step into a room. Made from premium 316L stainless steel, it’s more than just an access</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media">
+      <img src="assets/ads/miso-by-sonia/ad-25.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">26mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1088976218881867 pen Drop-down ​ See ad details misobysonia Sponsored Wear the mark of the lone mercenary with our Berserk pendant. For those who seek power beyond limits. Elevate your style – shop now! • Easy to style • Anti Turnish | Stainless steel • Fast Delivery 🚚 MISOBYSONIA.COM Exclusive Berserk Pendant for Men Re-stocked for a Limited time Shop Now Re-stocked for a Limited time MISOBYSONIA.COM Exclusive Berserk Pendant for Men Re-stocked for a Limited time Shop Now Re-stocked for a Limited time MISOBYSONIA.COM Exclusive Berserk Pendant for Men Re-stocked for a Limited t</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/miso-by-sonia/ad-29.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-4.fna.fbcdn.net/o1/v/t2/f2/m412/AQMaRNHlc057zH1aAEocDUAajlqtJSbAIBLzOuQwfWmFssAfCybrMb0rEKrIWhsBACJJaxm_vycGVsJj45SnXBc6.mp4?_nc_cat=109&amp;_nc_oc=Adq9Ymf7Jjt0RLlvrCSaXRFcycUzb44pE-Ik7wnD6jxo0O-_ghMyyTGJ_GhJ8GBFIP_OLltK0kCcXFvYQbPgNA0x&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-4.fna.fbcdn.net&amp;_nc_ohc=qgiQkCx2pl4Q7kNvwHmw_IJ&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLmFzaWNfaHExX3NkX3Byb2dyZXNzaXZlIiwieHB2X2Fzc2V0X2lkIjo4NTYwNDMxNDA3NTU3MDQsImFzc2V0X2FnZV9kYXlzIjo5NCwidmlfdXNlY2FzZV9pZCI6MTA2ODAsImR1cmF0aW9uX3MiOjYsInVybGdlbl9zb3VyY2UiOiJ3d3cifQ%3D%3D&amp;ccb=17-1&amp;_nc_gid=XOPfSzkTrVfGzfvhSviJoQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af53Qzwri1MmFihWOh2MZqD_UJ2t3sFARhuDjq6mAizwrQ&amp;oe=6A1A48AA" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">16mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 9103852019700127 Open Drop-down ​ See ad details misobysonia Sponsored Wear the mark of the lone mercenary with our Berserk pendant. For those who seek power beyond limits. Elevate your style – shop now! • Easy to style • Anti Turnish | Stainless steel • Fast Delivery 🚚 0:00 / 0:06 MISOBYSONIA.COM Exclusive Berserk Pendant for Men Limited Pieces Shop now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media">
+      <img src="assets/ads/miso-by-sonia/ad-30.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">18mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1026065435870988 pen Drop-down ​ See ad details misobysonia Sponsored Let everyone know you’re the BATMAN! 🦇 •⁠ ⁠Limited edition •⁠ ⁠Lifetime warranty •⁠ ⁠⁠waterproof •⁠ ⁠⁠anti tarnish •⁠ ⁠⁠hypoallergenic MISOBYSONIA.COM Anti-Tarnish Batman Ring Restocked Shop Now Restocked MISOBYSONIA.COM For Everyday Wear and tear Restocked Shop Now Restocked MISOBYSONIA.COM 100% water proof Restocked Shop Now Restocked MISOBYSONIA.COM Lifetime warranty Restocked Shop Now Restocked MISOBYSONIA.COM Sold out 5k+ on the launch day Restocked Shop Now Restocked MISOBYSONIA.COM 2k Pre orders in wai</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media">
+      <img src="assets/ads/miso-by-sonia/ad-31.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">15mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1159819992598085 Open Drop-down ​ See ad details misobysonia Sponsored 🤍⛓️ MISOBYSONIA.COM Shop Now MISOBYSONIA.COM Shop Now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/miso-by-sonia/ad-34.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-6.fna.fbcdn.net/o1/v/t2/f2/m412/AQM7odHdA2DFXKx_VgWu8dMuemfUP7io0XNiZsEnAh59lPt0O8smb3OHYOsFGgrUUkewRmLnJ5QQ6znkO5Ixzu76.mp4?_nc_cat=111&amp;_nc_oc=Adpwq8y8r8O6X_-ahD2wNd73Bx-Sx9w96Qt2FqXVwazB0Rtt_yNz2bj2MscgHTX43DO28TVs4307w3ClUesqKm8E&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-6.fna.fbcdn.net&amp;_nc_ohc=EU8yDwGx_GMQ7kNvwHpoH3R&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLmFzaWNfaHExX3NkX3Byb2dyZXNzaXZlIiwieHB2X2Fzc2V0X2lkIjo0MzE4NTU2MTY1MTAwMzY1LCJhc3NldF9hZ2VfZGF5cyI6MTUzLCJ2aV91c2VjYXNlX2lkIjoxMDY4MCwiZHVyYXRpb25fcyI6MTksInVybGdlbl9zb3VyY2UiOiJ3d3cifQ%3D%3D&amp;ccb=17-1&amp;_nc_gid=TFnIFZZzhBDDZztqUgL9jA&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af4ai3IkGRVvUYii3rldNzZoA-sbcyPTpQq2YISoEEWviQ&amp;oe=6A1A3B4C" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">11mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 721074633951577 Open Drop-down ​ See ad details misobysonia Sponsored Lowkey luxe: 925 silver ear cuff for men, lifetime warranty, no cap! •⁠ ⁠Made with 925 Sterling Silver •⁠ ⁠⁠Comes with a lifetime warranty •⁠ ⁠⁠Easy to wear 0:00 / 0:19 MISOBYSONIA.COM Ear cuff goals: 925 silver, lifetime warranty, flex on 'em&quot; 10k+ Men's Style Miso Shop now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/miso-by-sonia/ad-36.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-3.fna.fbcdn.net/o1/v/t2/f2/m412/AQOkVWklSAfFKzsDSAwY2arKR41-ogFNy7TITZ6FnwKG5OWzc1uuz5w-DGZd_1DsaszvZ831LQFw32ZGFe-WG1I.mp4?_nc_cat=106&amp;_nc_oc=AdrLDNumZgaamxWv3s5lzxMhw1mVWpbSlVcdA4hhL88Hfabbq6DUfTvz9XAFJQqq8b0G1h_-XF7LzeHM0GXTeTL0&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-3.fna.fbcdn.net&amp;_nc_ohc=CnqfQO3qjUYQ7kNvwEXTIhi&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLmFzaWNfaHExX3NkX3Byb2dyZXNzaXZlIiwieHB2X2Fzc2V0X2lkIjoyNTYyNzMwMjk2MDIwODI1MCwiYXNzZXRfYWdlX2RheXMiOjE2OSwidmlfdXNlY2FzZV9pZCI6MTA2ODAsImR1cmF0aW9uX3MiOjEzLCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;_nc_gid=TFnIFZZzhBDDZztqUgL9jA&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af6DtSLs1odFe4fllY5oTn_7q2CkhWwTzNkGAFi9kATQJg&amp;oe=6A1A4F04" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">16mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1333300801454922 Open Drop-down ​ See ad details misobysonia Sponsored Let everyone know you’re the BATMAN! 🦇 •⁠ ⁠Limited edition •⁠ ⁠Lifetime warranty •⁠ ⁠⁠waterproof •⁠ ⁠⁠anti tarnish •⁠ ⁠⁠hypoallergenic 0:00 / 0:14 MISOBYSONIA.COM Unleash Your Inner Batman Anti-tarnish Shop now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/miso-by-sonia/ad-37.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-6.fna.fbcdn.net/o1/v/t2/f2/m69/AQMXwVmd40XOUk8drR7ZGqAu_T9P0XV1Ob4eO8zUVw2lWd70DykFJJJI22PKxgpcH76Hg3I-X_TGslPSINxLyDCE.mp4?strext=1&amp;_nc_cat=111&amp;_nc_oc=AdrG1yJyG076EUVo224SObOsSWzId3qWcc2Wu5aKDVL9uN3kUKhqgPF8BbsnOabHC1YifAhAwqgx2Jr6dPE4Hv1Q&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-6.fna.fbcdn.net&amp;_nc_ohc=BfEIkLPOo9sQ7kNvwHNHwyv&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6NTQ3NzQ5NzY0OTQ0MTYxLCJhc3NldF9hZ2VfZGF5cyI6NDU5LCJ2aV91c2VjYXNlX2lkIjoxMDc5OSwiZHVyYXRpb25fcyI6OCwidXJsZ2VuX3NvdXJjZSI6Ind3dyJ9&amp;ccb=17-1&amp;_nc_gid=TFnIFZZzhBDDZztqUgL9jA&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af5UBSOWD90rXd5SVSCPq_Fyw2t1JV604SyzCluJ4aaM_g&amp;oe=6A1A3857" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">15mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1311365849916613 Open Drop-down ​ See ad details misobysonia Sponsored Stand out effortlessly with our unique men's jewelry from Miso. Unmatched designs that you won't find anywhere else. Elevate your style – shop now! • Easy to style • Fast Delivery 🚚 0:00 / 0:09 MISOBYSONIA.COM misobysonia Learn more</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/miso-by-sonia/ad-39.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-5.fna.fbcdn.net/o1/v/t2/f2/m69/AQOTX9IU7EC7Mk1FMQw9khCPlCQoTcO35BZx5PswCg-tmR36eAHo85i2c1We9EB5SB4z3YcZ7akqoOUybKpvhpLq.mp4?strext=1&amp;_nc_cat=101&amp;_nc_oc=Adptq7-jDKUOmf4HuUqG_ZR50LmWMKJf2Kclg-RC3acb_ZG7udY5A6hDdPKVDjrUWwcpbJ_-CF9umyeXfO7_YU0F&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-5.fna.fbcdn.net&amp;_nc_ohc=oIArWgtlmucQ7kNvwGSOmHj&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLmFzaWNfaHExX3NkX3Byb2dyZXNzaXZlIiwieHB2X2Fzc2V0X2lkIjo3MDM4Mjg4MzU4MzgxMTQsImFzc2V0X2FnZV9kYXlzIjoxNjYsInZpX3VzZWNhc2VfaWQiOjEwNjgwLCJkdXJhdGlvbl9zIjo5LCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;_nc_gid=TFnIFZZzhBDDZztqUgL9jA&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af7HoCqLUC2JkPPDUR_b9kK1fASBpfX44IAfRZvARpJK4w&amp;oe=6A1A52CD" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">16mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 3812327175677520 Open Drop-down ​ See ad details misobysonia Sponsored 🔱Make a statement of Spirituality and style with our Lord Shiva-inspired trident pendant. Get yours now! ✨🙏 • Anti-Tarnish • Limited Stock • Easy to style • Fast Delivery 0:00 / 0:10 MISOBYSONIA.COM Lord Shiva's Trident Pendant for Men 10k+ Men's Style Miso Shop now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/miso-by-sonia/ad-41.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-5.fna.fbcdn.net/o1/v/t2/f2/m560/AQOD0oUiPXkJS-9Z2bPLr54ES4AtNNIHHyjaMb7y0j3AZbgNqaQ8x9DeZ4DAAhg9OKpy4SbJR1_jUtqKB_0yHdtnaLhla4fYGvw.mp4?_nc_cat=102&amp;_nc_oc=AdrrAh-ctD4O67xl9Y5qESBMBN6jQNLfiBFZOnIGK_1ydsEzaNhjWagFjDY9QMHVZipzVTWHIzKreNPlP45IFPVp&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-5.fna.fbcdn.net&amp;_nc_ohc=-nLZ7QhhHYIQ7kNvwGIVldX&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLmFzaWNfaHExX3NkX3Byb2dyZXNzaXZlIiwieHB2X2Fzc2V0X2lkIjo4MzMxMTkzMjY1MDYzNjksImFzc2V0X2FnZV9kYXlzIjoxOCwidmlfdXNlY2FzZV9pZCI6MTA2ODAsImR1cmF0aW9uX3MiOjksInVybGdlbl9zb3VyY2UiOiJ3d3cifQ%3D%3D&amp;ccb=17-1&amp;_nc_gid=QrI4qM6uSYHMXZZVGHeB-A&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af4xIuZhpnAzG4AeY_wjhbD-kwDsi1HfN146_HtEZCe_OA&amp;oe=6A164F40" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">11mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1044225394564622 Open Drop-down ​ See ad details misobysonia Sponsored 🔱Make a statement of Spirituality and style with our Lord Shiva-inspired trident pendant. Get yours now! ✨🙏 • Anti-Tarnish • Limited Stock • Easy to style • Fast Delivery 0:00 / 0:10 MISOBYSONIA.COM Lord Shiva's Trident Pendant for Men Limited pieces Shop now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media">
+      <img src="assets/ads/miso-by-sonia/ad-44.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">26mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 871627304976640  ads use this creative and text Open Drop-down ​ See summary details misobysonia Sponsored RESTOCK IS LIVE!🔱 MISOBYSONIA.COM Shop Now MISOBYSONIA.COM Shop Now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/miso-by-sonia/ad-50.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-5.fna.fbcdn.net/o1/v/t2/f2/m412/AQMnKnWUSXBZXRbJhbRa2Ev5sjUi8WRnpLzNRDoAFu1tVBkN_PBcELduXTANLY6i87GGPkIZ5RL1VDBwxzifY4dv1A.mp4?_nc_cat=102&amp;_nc_oc=Adp0Xb2gyHkL5ZMIMfvXE29X7GLaP5hCglozfDnFGJ5SACt_3TqTAI5h7MnBBCgod00K_6QUx3xA0t3BnXD4Fxz0&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-5.fna.fbcdn.net&amp;_nc_ohc=me8NZ_dyWJgQ7kNvwFbfNgo&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLmFzaWNfaHExX3NkX3Byb2dyZXNzaXZlIiwieHB2X2Fzc2V0X2lkIjoxNDkwMDkxMDA4NzIxNTgyLCJhc3NldF9hZ2VfZGF5cyI6MTMwLCJ2aV91c2VjYXNlX2lkIjoxMDY4MCwiZHVyYXRpb25fcyI6MjIsInVybGdlbl9zb3VyY2UiOiJ3d3cifQ%3D%3D&amp;ccb=17-1&amp;_nc_gid=2gX-mDG4w5d4ngl9NZScCQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af4uXvp16PFKVpkjumAnghdyf_j0R1T0pK7_QzX1_0ChrA&amp;oe=6A1A3853" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">26mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 435843635797796 pen Drop-down ​ See ad details misobysonia Sponsored When it comes to bracelets, don't settle for less. It's time to break free from the off-style low-quality pieces and level up with our stainless steel bling!&quot; 💪😼 🚿Waterproof ✅Anti-tarnish with a lifetime warranty 🚎Shipping Pan India 0:00 / 0:22 MISOBYSONIA.COM I love the attention it brings. Limited Pieces Shop now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/miso-by-sonia/ad-53.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-6.fna.fbcdn.net/o1/v/t2/f2/m69/AQOJ_tuz9yVE_7iR3j4rCrilxzuzp9TcuDxPqPN0XqmfGzlfhKHsnpBPZSNLjobF5wPoMBhjvXhNZCenGmJE7xU0.mp4?strext=1&amp;_nc_cat=111&amp;_nc_oc=AdqHKbQyZpqrCC0UocAcZ9nlrPpEmUSc3U0HQcF-XSYyTQPzqIZl7SnQ9VqOJnXJDqTiy4iQ-9AMjts8Mlm9lACo&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-6.fna.fbcdn.net&amp;_nc_ohc=kJuOmEOyS4IQ7kNvwGTCN_K&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6OTE1NzU5MTcwNzM5MDI0LCJhc3NldF9hZ2VfZGF5cyI6NDg5LCJ2aV91c2VjYXNlX2lkIjoxMDc5OSwiZHVyYXRpb25fcyI6MTAsInVybGdlbl9zb3VyY2UiOiJ3d3cifQ%3D%3D&amp;ccb=17-1&amp;_nc_gid=2gX-mDG4w5d4ngl9NZScCQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af4ERn4B4svUAeV-wCAzueV33PvWlhHN3eqBg0ie65GvuA&amp;oe=6A1A3397" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">16mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1158729282348144 Open Drop-down ​ See ad details misobysonia Sponsored Wear the mark of the lone mercenary with our Berserk pendant. For those who seek power beyond limits. Elevate your style – shop now! • Easy to style • Anti Turnish | Stainless steel • Fast Delivery 🚚 0:00 / 0:10 MISOBYSONIA.COM misobysonia Learn more</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/miso-by-sonia/ad-55.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-5.fna.fbcdn.net/o1/v/t2/f2/m412/AQMNSNT47SAekMCIJxJTsgEVY1_Hv-IwtbgSZjvCbX-Ljva4O6unRCHw4ZS9rTzgUHOy3sQFLviWdF_C8HF0XlA.mp4?_nc_cat=102&amp;_nc_oc=AdohfOV3PA_JdLKjyrJ43i-PuNaFj17c1fsSi194htP76dBoikVb98jwfdVOMt-pvBopq9LEOUfng6h834sT_NQR&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-5.fna.fbcdn.net&amp;_nc_ohc=-KkhvEknNYAQ7kNvwGeMXD-&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLmFzaWNfaHExX3NkX3Byb2dyZXNzaXZlIiwieHB2X2Fzc2V0X2lkIjo5Mjg2MDgwNjk1OTQ5MDksImFzc2V0X2FnZV9kYXlzIjoxMTUsInZpX3VzZWNhc2VfaWQiOjEwNjgwLCJkdXJhdGlvbl9zIjoxMSwidXJsZ2VuX3NvdXJjZSI6Ind3dyJ9&amp;ccb=17-1&amp;_nc_gid=2gX-mDG4w5d4ngl9NZScCQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af5LNDtq2-jQB2YAZ15yaX5Gm6m7Kcnf3t7ChoNhdLlPbA&amp;oe=6A1A5E18" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">26mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1574465250072307 pen Drop-down ​ See ad details misobysonia Sponsored Classic pieces never go out of style! That's what this drop is all about. • 100% Waterproof • Lifetime warranty on color • Easy to style • Fast Delivery 0:00 / 0:11 MISOBYSONIA.COM 100% Waterproof Men's Jewelry 10k+ Men's Style Miso Shop now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/miso-by-sonia/ad-56.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-2.fna.fbcdn.net/o1/v/t2/f2/m560/AQMiyJZCQhcpH0JglZyG2Y6FmWU4Gfeb9GoVqLibVQ94ecmIOSTgNWPn5iznSGD5-Xb4OTR4xbViVGkxEkX8PflP-CCraf9Hbu4.mp4?_nc_cat=110&amp;_nc_oc=AdojDpINNH1kenXBrbFG-0d7BWrJaHaPP4ezjBMv0kl8RtamsVZQerLLpVTIPDxdeTKehvW08CXG4YlHFmxDb2qn&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-2.fna.fbcdn.net&amp;_nc_ohc=yWQjFIkG-u8Q7kNvwEUW868&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLmFzaWNfaHExX3NkX3Byb2dyZXNzaXZlIiwieHB2X2Fzc2V0X2lkIjoxNTExNjQ5ODIzNjQwNDIyLCJhc3NldF9hZ2VfZGF5cyI6MTIsInZpX3VzZWNhc2VfaWQiOjEwNjgwLCJkdXJhdGlvbl9zIjoxOCwidXJsZ2VuX3NvdXJjZSI6Ind3dyJ9&amp;ccb=17-1&amp;_nc_gid=2gX-mDG4w5d4ngl9NZScCQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af48cJSJdIaN3r5nfCO1C7Ef-PIolNvImNcs97N_LCx2ZA&amp;oe=6A166140" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">16mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1262026424912008 Open Drop-down ​ See ad details misobysonia Sponsored 🔱Make a statement of Spirituality and style with our Lord Shiva-inspired trident pendant. Get yours now! ✨🙏 • Anti-Tarnish • Limited Stock • Easy to style • Fast Delivery 0:00 / 0:18 MISOBYSONIA.COM Lord Shiva's Trident Pendant for Men Limited Pieces Shop now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/miso-by-sonia/ad-57.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-5.fna.fbcdn.net/o1/v/t2/f2/m69/AQOrQMZaCCxQhq-UDxetoBaZWEV9FFTOn6W58H4YCupEGmR7NdpiLqevwbqN3mt8MpLuOvQwPDhznnZtp63F34fX.mp4?strext=1&amp;_nc_cat=101&amp;_nc_oc=Adr6cz_4LUgW68eSvnFz0cHNeToiEyKLxdYKWAoJSRndLBM8tRQfqG-ripsrKPwu5yGQo0z_GVKsgu-BeZlzGH3H&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-5.fna.fbcdn.net&amp;_nc_ohc=yP0sbscX4J4Q7kNvwH-Sbkb&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6NTAyNTE2NzMyNTc3NTE3LCJhc3NldF9hZ2VfZGF5cyI6NDU5LCJ2aV91c2VjYXNlX2lkIjoxMDc5OSwiZHVyYXRpb25fcyI6MTUsInVybGdlbl9zb3VyY2UiOiJ3d3cifQ%3D%3D&amp;ccb=17-1&amp;_nc_gid=2gX-mDG4w5d4ngl9NZScCQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af6ytW-tmAPQabTM6jL4Dk9jyNvk3bx68VwDN9_lwy8h1Q&amp;oe=6A1A3C51" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">15mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1646364859310969 Open Drop-down ​ See ad details misobysonia Sponsored Stand out effortlessly with our unique men's jewelry from Miso. Unmatched designs that you won't find anywhere else. Elevate your style – shop now! • Easy to style • Fast Delivery 🚚 0:00 / 0:16 MISOBYSONIA.COM misobysonia Learn more</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/miso-by-sonia/ad-59.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-1.fna.fbcdn.net/o1/v/t2/f2/m412/AQN4Ua1hBsQj15E2C1rMNYVLwHph52s0kAvl0EbZi4wYL_p0pv3Tm-NIyRwpq_zY8PihxNfGKDclXZCd5UAQz284.mp4?_nc_cat=105&amp;_nc_oc=Adozr-qYpFJtpG088hqTLoYBL69zfiDUXVYBfuNF2NCR8F0mYKedzqJqM-j2W8LjKru6iJXv0kVFN8zqKbeAKC2Z&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-1.fna.fbcdn.net&amp;_nc_ohc=G22kb5rKsaIQ7kNvwGR3N-h&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLmFzaWNfaHExX3NkX3Byb2dyZXNzaXZlIiwieHB2X2Fzc2V0X2lkIjo5NDI5OTYyMjg4OTc1MjksImFzc2V0X2FnZV9kYXlzIjoxMzYsInZpX3VzZWNhc2VfaWQiOjEwNjgwLCJkdXJhdGlvbl9zIjozMSwidXJsZ2VuX3NvdXJjZSI6Ind3dyJ9&amp;ccb=17-1&amp;_nc_gid=2gX-mDG4w5d4ngl9NZScCQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af45M5-dP9AykEpNxt-VxxxqU8RRzz1RVXkN4ytkuANv_w&amp;oe=6A1A3C96" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">25mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 315388358266031 Open Drop-down ​ See ad details misobysonia Sponsored Wear the mark of the lone mercenary with our Berserk pendant. For those who seek power beyond limits. Elevate your style – shop now! • Easy to style • Anti Turnish | Stainless steel • 100% Waterproof/Sweatproof • Fast Delivery 🚚 0:00 / 0:31 MISOBYSONIA.COM Exclusive Berserk Pendant for Men Limited Pieces Shop now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media">
+      <img src="assets/ads/miso-by-sonia/ad-65.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">16mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 2744592002392553 2 ads use this creative and text Open Drop-down ​ See summary details misobysonia Sponsored RESTOCK IS LIVE!🔱 MISOBYSONIA.COM Shop Now MISOBYSONIA.COM Shop Now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media">
+      <img src="assets/ads/miso-by-sonia/ad-67.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">10mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 633583856422749 This ad has multiple versions ​ Open Drop-down ​ See ad details misobysonia Sponsored Attention Men! - Our Exclusive Best Sellers are in Stock for a Limited Time. Here's what our customers have to say about our best sellers. ⭐⭐⭐⭐⭐ &quot; It was so much worth the wait, and the quality of the chain is over everything &gt;&gt;&gt;&gt;&gt;&gt; My men was so happy &quot; - Nandini. ⭐⭐⭐⭐⭐ &quot; Makes sense why it's almost out of stock&quot; - Sagar Malhotra ⭐⭐⭐⭐⭐ &quot; That look is worth every penny&quot; - Sachin Why do 20K+ Men love miso? • Unique Designs that Men's want • Lifetime warranty on Many products • Wa</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/miso-by-sonia/ad-69.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-6.fna.fbcdn.net/o1/v/t2/f2/m69/AQPEPEMYoI5_GpMDlDt9Jene7ehzAhqNe1HW6kleC61XPuUClcici7HuFSgfrCAqA9CNZ_yOEHrtk3fG1lXPQAVH.mp4?strext=1&amp;_nc_cat=107&amp;_nc_oc=AdogJAYvdzj5uZunFY52Ets7hkBIt9h5E1k49VO-rt5FVxPF4E9Ur7_lsyN-xx0JH_abv9I-EWNfaHPPW6zdyWZm&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-6.fna.fbcdn.net&amp;_nc_ohc=TGH9PBurwg0Q7kNvwHpRzWb&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6MTE2MjIyMzY5MTQxMzU5NiwiYXNzZXRfYWdlX2RheXMiOjQ2MiwidmlfdXNlY2FzZV9pZCI6MTA3OTksImR1cmF0aW9uX3MiOjEzLCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;_nc_gid=s4c6ylNo_FcnFdlMrq-aPw&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af5WWmMXBkp_ofzuTaQMW3l8ePRBMmONoqY3j-_nNZRtTw&amp;oe=6A1A40A7" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">15mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 601760045965894 Open Drop-down ​ See ad details misobysonia Sponsored Stand out effortlessly with our unique men's jewelry from Miso. Unmatched designs that you won't find anywhere else. Elevate your style – shop now! • Easy to style • Fast Delivery 🚚 0:00 / 0:14 MISOBYSONIA.COM misobysonia Learn more</div>
+      
+    </div>
+  </div></div>
+    </div>
+  </div>
+  <div class="brand-section" id="brand-3">
+    <div class="brand-header" onclick="toggleBrand(3)">
+      <div class="brand-title-row">
+        <span class="brand-name">Sic Sense</span>
+        <span class="brand-stats">5 ads · 0 proven</span>
+      </div>
+      <span class="chevron" id="chev-3">▼</span>
+    </div>
+
+    <div class="brand-body" id="body-3">
+      
+      <div class="analysis-grid">
+        <div class="analysis-card">
+          <div class="analysis-label">What they're selling</div>
+          <div class="analysis-value">Edgy, waterproof, tarnish-resistant men's jewellery that works across all lifestyle moments without looking cheap.</div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-label">Dominant hook</div>
+          <div class="analysis-value">Lifestyle versatility + durability proof — 'it keeps up with everything you do' combined with feature callouts (waterproof/tarnish-resistant).</div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-label">What's working</div>
+          <div class="analysis-value">They're solving the 'will it last?' anxiety with explicit durability claims while making jewellery feel like an everyday essential, not an occasion piece — the lifestyle scenario lists make it feel wearable and practical for guys hesitant about jewellery.</div>
+        </div>
+        <div class="analysis-card weakness">
+          <div class="analysis-label">Their weakness</div>
+          <div class="analysis-value">Over-explaining and feature-dumping — they're still convincing skeptics instead of speaking to guys who already get it; the tone tries too hard to be edgy/aspirational and lacks authenticity; no honest material conversation (what IS it actually made of?).</div>
+        </div>
+      </div>
+
+      <div class="patterns-row">
+        <div class="patterns-label">Messaging patterns</div>
+        <div class="patterns-list">
+          <span class="pattern-tag">List-based lifestyle scenarios (office, gym, concerts, dates) to show versatility</span><span class="pattern-tag">Aspirational identity positioning ('for the ones who don't dress safe', 'good taste', 'main character')</span><span class="pattern-tag">Heavy feature emphasis: waterproof, tarnish-resistant, skin-safe as hero points</span><span class="pattern-tag">Urgency/scarcity tactics (launch sale, pieces disappearing, Valentine's gifting)</span><span class="pattern-tag">Y2K/streetwear aesthetic language ('edgy', 'playful', 'Y2K-coded')</span>
+        </div>
+      </div>
+
+      <div class="yaani-angle">
+        <div class="yaani-angle-label">Yaani's angle against Sic Sense</div>
+        <div class="yaani-angle-body">Go brutally honest on material while they stay vague. Position brass as the grown-up choice: 'They won't tell you what it's made of. We will. Solid brass. Not plated. Not coated. Just metal that ages with you.' Pair minimalist product shots (one piece, one guy, real light) against their chaotic lifestyle montages — make simplicity feel confident, not boring. Target the guy who's tired of being sold to.</div>
+      </div>
+      
+
+      <div class="ads-label">Ads (sorted by impressions)</div>
+      <div class="ads-grid">
+  <div class="ad-card">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/sic-sense/ad-0.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-2.fna.fbcdn.net/o1/v/t2/f2/m86/AQNUwdyR7Z7caaEusmoYs6Y8x9BBpckwfRlxmuUdAxXX_C-SOY4ueKU8V6hDWPNKi0m1T-eQXu8BPHkiCxoQyxRIyDl1LsILhknmUtA.mp4?_nc_cat=110&amp;_nc_oc=AdpjKI5uNj3N6m7Ullb1uRQQKRmbDu0gVUuf1WcKmufy-_YgWxXwv968hl6RMhlHQsvYJ5iU3B3D5Dj8nJp0uEs3&amp;_nc_sid=5e9851&amp;_nc_ht=video.fbom19-2.fna.fbcdn.net&amp;_nc_ohc=O6UZNqNpZZUQ7kNvwG2m05k&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLmRhc2hfYmFzZWxpbmVfM192MSIsInhwdl9hc3NldF9pZCI6Mzk0ODczMzgxNTM0NzM2MCwiYXNzZXRfYWdlX2RheXMiOjE0OCwidmlfdXNlY2FzZV9pZCI6MTAwOTksImR1cmF0aW9uX3MiOjI1LCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;vs=92a3f7eff061384b&amp;_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC9COTQ0RDE2QzFCNjFBQjg2Q0Q4MzdEMzQ3QjhGQzdCNF92aWRlb19kYXNoaW5pdC5tcDQVAALIARIAFQIYRmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC84NDkyOTA3MzQ2NjQzNjNfNDgxODU5ODQyNzc1NzIyMjExMi5tcDQVAgLIARIAKAAYABsCiAd1c2Vfb2lsATEScHJvZ3Jlc3NpdmVfcmVjaXBlATEVAAAmwOKCxsfWgw4VAigCQzMsF0A55mZmZmZmGBJkYXNoX2Jhc2VsaW5lXzNfdjERAHUAZeadAQA&amp;_nc_gid=VrtZZhpfVwhEbgL1gDsyxQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af68vv8DD2AYDB8XEGXCqrCh8CYIpSNWm1uLfex_6GItHg&amp;oe=6A165153" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">4mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 1849082669372611 ​ 2 ads use this creative and text Open Drop-down ​ See summary details Sicsense Sponsored New site. New flow. Same SICSENSE ⚡️ We rebuilt the whole experience and dropped a launch sale to celebrate🫡 Go and explore before your favourite pieces disappear👀 #SICSENSE #LaunchSale #ShopNow #streetwearindia 0:00 / 0:26</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media">
+      <img src="assets/ads/sic-sense/ad-2.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">2mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 1411594007409056 This ad has multiple versions ​ Open Drop-down ​ See ad details Sicsense Sponsored For the ones who don’t dress safe. Edgy, playful, Y2K-coded pieces that stand out without looking cheap. ✨ Tap to explore. SICSENSE.IN Crome Jean Chain Sicsense Shop Now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media">
+      <img src="assets/ads/sic-sense/ad-4.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">2mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 1251059706968418 ​ Open Drop-down ​ See ad details Sicsense Sponsored Valentine’s day is just around the corner🫶🏻 and we thought we will save your girlfriends the trouble of finding you the perfect gift😌 To all the boys - SEND THIS TO YOUR GIRLFRIENDS and let them guess which boyfriend are you?🫡 And to all the girls - which one’s your man? save this for his birthday or send it now and watch him have an existential crisis about being “so predictable” 💀 • valentine’s day gift ideas • gifts for him • valentine’s sale • the perfect present for him • birthday gifts for him Sicse</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/sic-sense/ad-1.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-2.fna.fbcdn.net/o1/v/t2/f2/m412/AQObo8blWcqlb5YRIjkdw8_qIyVWiiCXCcJ3lSyDjLk7KzF--paBkgG_LAuTjFTxITV8aRqbmLyFuwiowsHC1kuvd7Lc8THsQA5YZyhfaQ.mp4?_nc_cat=110&amp;_nc_oc=AdrI8847crQh-HzYUciPYhHDoOltI97DX8L0ALwAXf1sG22OKqeT_8d8PuC2WgGcguFgAE8ZkwiY6OXeUWuNkDDi&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-2.fna.fbcdn.net&amp;_nc_ohc=ZdoRAjmeZOIQ7kNvwEbVaSj&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6NzU2NzE4ODY0MTgzMzE2LCJhc3NldF9hZ2VfZGF5cyI6ODMsInZpX3VzZWNhc2VfaWQiOjEwNzk5LCJkdXJhdGlvbl9zIjoxOSwidXJsZ2VuX3NvdXJjZSI6Ind3dyJ9&amp;ccb=17-1&amp;_nc_gid=VrtZZhpfVwhEbgL1gDsyxQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af6gwgWE950iqT-7d-tk8b-i_BpoleP51qYuxZY5k6t5og&amp;oe=6A1A4244" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">0mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 1272146665033367 ​ Open Drop-down ​ See ad details Sicsense Sponsored 💼 Office hours. 🎤 Concert nights. ☕ Brunch dates. 🏋️ Gym sessions. 🥂 After-parties. ✈️ Airport fits. It keeps up with all of it. 💧 Sweat. 🚿 Showers. 🌧️ Rain. Still shining. No fading. No green marks. Just main-character durability. ➡️ Waterproof. ➡️ Tarnish-resistant. ➡️ Skin-safe. Made for real life — not just outfit pics. 0:00 / 0:20 SICSENSE.IN No fading. No green marks. Just main-character durability. Shop now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/sic-sense/ad-3.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-5.fna.fbcdn.net/o1/v/t2/f2/m412/AQOa6G9r7OdgnJLUf1WfLF-S99pWY2o52KWievfG_eOgS1j8G4HwocDHwG6XlacHWQmyZaqwEqfZ4YMdKPe_p8_KkNd87OsBdSmK0rJM2A.mp4?_nc_cat=102&amp;_nc_oc=AdrZE-c-Pza_bQZMX6amHwbLhLEz6sKwBDvhtQbardhWOxFqc9ZnbGEZSB63SWAhrj86LXb6mJWRVeKc2RZB-q_0&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-5.fna.fbcdn.net&amp;_nc_ohc=biDF1z5PCE0Q7kNvwFXz-ZJ&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6MTI3MDU3MDIxNTE5MzM3NCwiYXNzZXRfYWdlX2RheXMiOjMyLCJ2aV91c2VjYXNlX2lkIjoxMDc5OSwiZHVyYXRpb25fcyI6MjcsInVybGdlbl9zb3VyY2UiOiJ3d3cifQ%3D%3D&amp;ccb=17-1&amp;_nc_gid=VrtZZhpfVwhEbgL1gDsyxQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af4bQ1BUaypdUgc1giIsZrcFdxt-vlpdVFcXintuz-PZCQ&amp;oe=6A1A4D90" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">0mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 4527110090905992  Open Drop-down ​ See ad details Sicsense Sponsored Most guys miss this... This is what good taste looks like. 👀 Not loud. 🔇 Not overdone. ✨ Just pieces that feel intentional. The kind you don’t overthink — you just wear. 0:00 / 0:27 SICSENSE.IN Sicsense Shop now</div>
+      
+    </div>
+  </div></div>
+    </div>
+  </div>
+  <div class="brand-section" id="brand-4">
+    <div class="brand-header" onclick="toggleBrand(4)">
+      <div class="brand-title-row">
+        <span class="brand-name">Zach Official</span>
+        <span class="brand-stats">5 ads · 0 proven</span>
+      </div>
+      <span class="chevron" id="chev-4">▼</span>
+    </div>
+
+    <div class="brand-body" id="body-4">
+      
+      <div class="analysis-grid">
+        <div class="analysis-card">
+          <div class="analysis-label">What they're selling</div>
+          <div class="analysis-value">Brass bracelets positioned as aspirational streetstyle accessories that 'elevate' and 'up your game' for men wanting to make a statement.</div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-label">Dominant hook</div>
+          <div class="analysis-value">Discount-led (10% off first purchase) + aspirational language ('up your wrist game', 'elevate your style') — trying to convince you that you need this upgrade.</div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-label">What's working</div>
+          <div class="analysis-value">Ads running 1-2 months suggests decent conversion on discount-hungry audience — the combination of affordable brass + discount + streetstyle positioning is catching men who want jewelry but need a 'reason' (the deal) to justify the purchase.</div>
+        </div>
+        <div class="analysis-card weakness">
+          <div class="analysis-label">Their weakness</div>
+          <div class="analysis-value">Selling insecurity, not confidence — entire angle is 'you need this to be better.' The discount-first approach cheapens the brand and attracts price-sensitive buyers, not brand-loyal ones. They're convincing, explaining, pushing — talking to guys who DON'T already wear jewelry, which means high friction customers.</div>
+        </div>
+      </div>
+
+      <div class="patterns-row">
+        <div class="patterns-label">Messaging patterns</div>
+        <div class="patterns-list">
+          <span class="pattern-tag">Heavy reliance on discount as primary hook — leads with 10% off in almost every ad</span><span class="pattern-tag">Aspirational language suggesting jewelry will transform/improve you ('elevate', 'up your game', 'make a statement')</span><span class="pattern-tag">Feature-dumping (premium quality, comfortable, free shipping, easy returns, fast delivery) — defensive selling</span><span class="pattern-tag">Seasonal urgency ('this season') to manufacture FOMO</span><span class="pattern-tag">Over-explaining value with emojis and formatting (✨, 🌟, bold Unicode text) — trying too hard</span>
+        </div>
+      </div>
+
+      <div class="yaani-angle">
+        <div class="yaani-angle-label">Yaani's angle against Zach Official</div>
+        <div class="yaani-angle-body">Flip the entire script: no discounts, no convincing. Target the guy who already wears jewelry with brutally simple product shots and copy like 'Brass that doesn't flake. Wears in, not out.' or 'Not plated. Won't peel.' Show worn-in pieces,patina, realness. While Zach sells aspiration to beginners, Yaani sells quality to guys who already know. Make Zach look like they're trying too hard — because they are.</div>
+      </div>
+      
+
+      <div class="ads-label">Ads (sorted by impressions)</div>
+      <div class="ads-grid">
+  <div class="ad-card">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/zach-official/ad-0.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-2.fna.fbcdn.net/o1/v/t2/f2/m412/AQMQ_qMiUYR1mSK0_gvYAye8UT6NSCBK8KNNP5B0tGuq1zXF3UhQV0imYeBHgD80_iWka1LqvANOJKGwGrw_5armZTcDSVVlpap6MI4Gvg.mp4?_nc_cat=110&amp;_nc_oc=AdoLMWRJR29oB9A6ky1CXdMRr8G2d83iA9G_rNx6vYQy7DKfxk8DleB5ErLsOivvE7gQ9HNXdZkcouyiQ_2LWf3v&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-2.fna.fbcdn.net&amp;_nc_ohc=4qBfrq9uqJAQ7kNvwHXTlHg&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6MTUzMzE2OTE5Nzc2NDE0OCwiYXNzZXRfYWdlX2RheXMiOjg4LCJ2aV91c2VjYXNlX2lkIjoxMDc5OSwiZHVyYXRpb25fcyI6MTgsInVybGdlbl9zb3VyY2UiOiJ3d3cifQ%3D%3D&amp;ccb=17-1&amp;_nc_gid=2Hl7CyaGBfDC2PEkqCDGBg&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af5m3nkI82S-I3Fmun6QKvdfKQkZALbxMD12kJoRrIkgDw&amp;oe=6A1A5374" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">2mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 1212444827638612 ​ Open Drop-down ​ See ad details Zach.official Sponsored G𝐞𝐭 𝟏𝟎% 𝐎𝐟𝐟 𝐨𝐧 𝐲𝐨𝐮𝐫 𝐟𝐢𝐫𝐬𝐭 𝐩𝐮𝐫𝐜𝐡𝐚𝐬𝐞! ✨ Up your wrist game this season with our dapper streetstyle bracelets. Made with top quality brass &amp; intricate detailing, it is the ultimate modern man's jewelry piece. 0:00 / 0:18 ZACHOFFICIAL.COM Get 10% Off on your First Order Learn more</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/zach-official/ad-2.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-5.fna.fbcdn.net/o1/v/t2/f2/m412/AQMs_3pk8oNVuQcDCG-hwCkyY0o3inJOdlXVsKW_xFcIemxyQ9eAGsLU3GbiMQGOKBtIxVf_cXSz8FP9EoVwmFHE.mp4?_nc_cat=101&amp;_nc_oc=AdooGchVcOhElLcFBSvL0gADYXKqSvnwVsaTBitA43_wn7lkZyjDNyt0KrZZ2cTcbX_yAhqYwysOhOXfO_TWxMqq&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-5.fna.fbcdn.net&amp;_nc_ohc=jYc1PI2yuUMQ7kNvwEAziUf&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMjQwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6NjQyNTU4NTA0NDAxMDc4LCJhc3NldF9hZ2VfZGF5cyI6MTA4MSwidmlfdXNlY2FzZV9pZCI6MTAxMzksImR1cmF0aW9uX3MiOjE4LCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;_nc_gid=2Hl7CyaGBfDC2PEkqCDGBg&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af7b79kO51eBZEORuosGVGF5pZz_L02gz8BMR-IOBz0Bxw&amp;oe=6A1A4B2E" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">1mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 1659948262017548 ​ Open Drop-down ​ See ad details Zach.official Sponsored 𝐆𝐞𝐭 𝟏𝟎% 𝐎𝐟𝐟 𝐨𝐧 𝐲𝐨𝐮𝐫 𝐟𝐢𝐫𝐬𝐭 𝐩𝐮𝐫𝐜𝐡𝐚𝐬𝐞! ✨ Up your wrist game this season with our dapper streetstyle bracelets. Made with top quality brass &amp; intricate detailing, it is the ultimate modern man's jewelry piece. 🛒Shop Now 0:00 / 0:19 ZACHOFFICIAL.COM Get 10% Off Shop now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/zach-official/ad-5.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-3.fna.fbcdn.net/o1/v/t2/f2/m412/AQPMHSP13dLc8cTouhZ_j5gcGt-Qg-g6F6sJLTqB0EP1AHsXiwinBwW9CxUzFu2P3PbVkDpKCPBuqPv2O9WFTN95H6-bi2VManvSIBJ0Xw.mp4?_nc_cat=106&amp;_nc_oc=Adplwdl5OxSkpZdN_pNd99g_uDejbY8YhZqmc5f6P5Hq8wJRqLKziAET85KNGs-3LKPKRWIWjWiTbBO5vglWjphv&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-3.fna.fbcdn.net&amp;_nc_ohc=k7YlOSUbdL0Q7kNvwHI57w5&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6OTcyNjc0NTAxOTkwOTYwLCJhc3NldF9hZ2VfZGF5cyI6NTEsInZpX3VzZWNhc2VfaWQiOjEwNzk5LCJkdXJhdGlvbl9zIjoxNywidXJsZ2VuX3NvdXJjZSI6Ind3dyJ9&amp;ccb=17-1&amp;_nc_gid=2Hl7CyaGBfDC2PEkqCDGBg&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af5JTlJg2PsWfRch59XrLwBYQCQTiRc0N1sUnyqNSYR8kQ&amp;oe=6A1A2F04" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">1mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 1682139109442485  Open Drop-down ​ See ad details Zach.official Sponsored G𝐞𝐭 𝟏𝟎% 𝐎𝐟𝐟 𝐨𝐧 𝐲𝐨𝐮𝐫 𝐟𝐢𝐫𝐬𝐭 𝐩𝐮𝐫𝐜𝐡𝐚𝐬𝐞! ✨ Up your wrist game this season with our dapper streetstyle bracelets. Made with top quality brass &amp; intricate detailing, it is the ultimate modern man's jewelry piece. 0:00 / 0:18 ZACHOFFICIAL.COM Get 10% Off on your First Order Shop now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/zach-official/ad-6.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-3.fna.fbcdn.net/o1/v/t2/f2/m412/AQNi0-3nOgg5U8szZ_0eAzAbvBy6-shhxrFoSGT9ZOdSMgeLxfkbrf2KP47nQLTWMX0rcQTTvbPSEnnCpSo3Uzc.mp4?_nc_cat=106&amp;_nc_oc=AdpFPs1whc9nyhKug432k0nqCSFgmhbez_WyCs16Umi2JJ7vWXbrCbFyzB7VvGW-qSdLBSIY0rsBTUazDSLyprpr&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-3.fna.fbcdn.net&amp;_nc_ohc=lKoIYf3g-rAQ7kNvwHUjIs3&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6MTg1ODU2ODk5Nzk1Mjg5NiwiYXNzZXRfYWdlX2RheXMiOjY5MSwidmlfdXNlY2FzZV9pZCI6MTAxMzksImR1cmF0aW9uX3MiOjE3LCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;_nc_gid=2Hl7CyaGBfDC2PEkqCDGBg&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af5sbI-y37XbcnBCZYtF_Xe3WQi4d5yezt1vw6anNczMcA&amp;oe=6A1A3D00" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">1mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 1264557825827115 ​ This ad has multiple versions ​ Open Drop-down ​ See ad details Zach.official Sponsored Introducing our newest cuff collection, designed to elevate your wrist game this season! 🌟 Premium Quality 🙌 Comfortable All-Day Wear 📦Free Shipping On All Orders 🔄 Easy Returns 🚚Fast Delivery 0:00 / 0:17 Get 10% Off on your First Order Shop Now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/zach-official/ad-1.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-5.fna.fbcdn.net/o1/v/t2/f2/m412/AQOEx4j3UCLDdufuRG4COaLDZ9DbC0W69FE5WIHcP41c3_YosgDHCqAbQWU9OoDCVY30_wraDSeDyq0sv-1Y-WaHr13j4H344990LU4wkQ.mp4?_nc_cat=101&amp;_nc_oc=Ados1bnoBUL2WAttaGkI74Z-2VNzZc0a-PYb6D_mh3A3JsZGPzAgdZHslNxx2WEJQ3tvLPjqlErpiQaSsYmOUUjS&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-5.fna.fbcdn.net&amp;_nc_ohc=iESiBiJKYtIQ7kNvwEzfJQ8&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6OTU0MDAzNzQ2OTkxMjY1LCJhc3NldF9hZ2VfZGF5cyI6NTgsInZpX3VzZWNhc2VfaWQiOjEwNzk5LCJkdXJhdGlvbl9zIjoxNywidXJsZ2VuX3NvdXJjZSI6Ind3dyJ9&amp;ccb=17-1&amp;_nc_gid=2Hl7CyaGBfDC2PEkqCDGBg&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af69G14r-EgCh8x69QqVW--sew1ENhjIZHmVdW8DMvY8vA&amp;oe=6A1A4879" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">0mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 1768956467418923 ​ This ad has multiple versions ​ 4 ads use this creative and text Open Drop-down ​ See summary details Zach.official Sponsored Elevate your style with our sleek, modern bracelets 🚀. Crafted from premium brass and adorned with intricate details, they're the perfect accessory for the discerning gentleman looking to make a statement. Add a touch of sophistication to your wrist game this season! #ModernManJewelry 0:00 / 0:18 Elevate Your Wrist Game This Season Shop Now</div>
+      
+    </div>
+  </div></div>
+    </div>
+  </div>
+  <div class="brand-section" id="brand-5">
+    <div class="brand-header" onclick="toggleBrand(5)">
+      <div class="brand-title-row">
+        <span class="brand-name">Palmonas</span>
+        <span class="brand-stats">19 ads · 19 proven</span>
+      </div>
+      <span class="chevron" id="chev-5">▼</span>
+    </div>
+
+    <div class="brand-body" id="body-5">
+      
+      <div class="analysis-grid">
+        <div class="analysis-card">
+          <div class="analysis-label">What they're selling</div>
+          <div class="analysis-value">Affordable luxury demi-fine jewellery with celebrity credibility (Shraddha Kapoor) that looks expensive but won't tarnish or break the bank.</div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-label">Dominant hook</div>
+          <div class="analysis-value">Luxury aesthetics at accessible prices — validating the desire for 'expensive-looking' jewellery without the guilt of overspending.</div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-label">What's working</div>
+          <div class="analysis-value">Celebrity credibility removes purchase anxiety for buyers new to online jewellery; the 'affordable luxury' framing gives permission to buy frequently without guilt; technical specs (tarnish-proof, waterproof) address specific pain points of cheaper alternatives; repetition builds familiarity and trust through sheer ad frequency.</div>
+        </div>
+        <div class="analysis-card weakness">
+          <div class="analysis-label">Their weakness</div>
+          <div class="analysis-value">Zero masculine energy or male representation — completely alienates the men's market; overly focused on justifying the price-quality equation, suggesting audience insecurity rather than confidence; celebrity dependence makes brand feel borrowed, not owned; 'demi-fine' category creates confusion and sounds like a compromise, not a deliberate choice; no authentic material story — gold plating is still a coating pretending to be something else.</div>
+        </div>
+      </div>
+
+      <div class="patterns-row">
+        <div class="patterns-label">Messaging patterns</div>
+        <div class="patterns-list">
+          <span class="pattern-tag">Celebrity social proof heavy — Shraddha Kapoor appears in 11/19 ads as co-founder/endorser/aspiration anchor</span><span class="pattern-tag">Technical reassurance layering — constantly repeating '18K gold plating, water/tarnish proof, skin-safe' to overcome trust barriers</span><span class="pattern-tag">Affordable luxury paradox — 'luxe but doesn't break the bank', 'more jewellery less spending', positioning price as the hero benefit</span><span class="pattern-tag">Category ownership claims — 'brought demi-fine to India', 'not just a brand, a category', establishing market leadership</span><span class="pattern-tag">Everyday wearability + special occasion versatility — hedging between casual and festive use cases</span><span class="pattern-tag">Heavy emoji use and exclamatory tone — very feminine, bubbly, enthusiastic energy</span>
+        </div>
+      </div>
+
+      <div class="yaani-angle">
+        <div class="yaani-angle-label">Yaani's angle against Palmonas</div>
+        <div class="yaani-angle-body">Position brass as the honest, masculine choice vs. gold-plated pretense. Run ads that call out 'plating' directly: 'Not plated. Not pretending. Just brass that gets better with time.' Target the guy who's tired of things that look expensive but aren't — he wants real material that ages with character, not a coating that eventually reveals the lie. Use the line: 'She wears plating. You wear brass.' Make material honesty masculine, make Palmonas feel like costume jewellery for men who don't know better yet.</div>
+      </div>
+      
+
+      <div class="ads-label">Ads (sorted by impressions)</div>
+      <div class="ads-grid">
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/palmonas/ad-1.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-5.fna.fbcdn.net/o1/v/t2/f2/m366/AQOj_bzaWtqOxtUZJOUY26b8FplyWgJTpmyQkHHDSm_jkfTNlPuBPW9uzFlbv9Q9tNztU16drGw1IPRhYOEUbmZGAhYISuIASSDh4GDcag.mp4?_nc_cat=101&amp;_nc_oc=AdplcL6y2JOVkDPN9JTPWx-yKUt2HO5LvA-eJENfNHp1Hsx54rdpkvRAc7fI5ODkZnVQdOcRMMqf4F7-7KxsOGDc&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-5.fna.fbcdn.net&amp;_nc_ohc=qVaPRQIe3-AQ7kNvwGfHGhi&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6NDIyODkyNDE4NzQzMjUzNSwiYXNzZXRfYWdlX2RheXMiOjI1NywidmlfdXNlY2FzZV9pZCI6MTA3OTksImR1cmF0aW9uX3MiOjExLCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;_nc_gid=nHyqgGxf2ZaLxbharaqo7A&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af4d3piumFKbzqzuLq9OuR4JRwy8uDLITCGaf3g18dH90g&amp;oe=6A1A4DA9" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">6mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 616056441550193 ads use this creative and text Open Drop-down ​ See summary details Palmonas Sponsored ✨Specially curated by Shraddha Kapoor.✨ Celebrate Festive Glam in Style with our Buy 1 Get 1 Offer!🎉 Don’t just wear jewellery, own the moment, all day long!✨ ✅ 18K Thick Gold Plating ✅ Water &amp; Tarnish Proof ✅ Skin-Safe ✅ Perfect for Every Occasion Use Code - FESTIVE Luxury, Without the rules. Shine brighter with Palmonas!💫💖 0:00 / 0:12</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/palmonas/ad-2.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-3.fna.fbcdn.net/o1/v/t2/f2/m69/AQN4XrTrSqSMdl0Aq4YKSuCdO_WgbdkHAxHwsaw7cmBPN9qECwY_Ii2PT5G2u1WYyRsuzRd_0ZEVz9MBHXnEQcC1.mp4?strext=1&amp;_nc_cat=100&amp;_nc_oc=AdqOuKQh08uDuC_ZIbMW8ehtT5YgIfqDcuVz5rJTQJP94NlKszd_NMhND1nc9hdAL9jynpiPDHkRQRwjXGhzV4o4&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-3.fna.fbcdn.net&amp;_nc_ohc=tr4vsOCcpPQQ7kNvwE5RZPL&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6NTIwMTg1MDM3MDUzMjc2LCJhc3NldF9hZ2VfZGF5cyI6NjMzLCJ2aV91c2VjYXNlX2lkIjoxMDEwMSwiZHVyYXRpb25fcyI6MzEsInVybGdlbl9zb3VyY2UiOiJ3d3cifQ%3D%3D&amp;ccb=17-1&amp;_nc_gid=nHyqgGxf2ZaLxbharaqo7A&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af6PYlD3Lr70S7rTQOEpUebcbgzNLgiB7fR8U6O1g71ciw&amp;oe=6A1A4256" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">6mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 824084130507821 ads use this creative and text Open Drop-down ​ See summary details Palmonas Sponsored Jewelley that is luxe but doesn’t break the bank? Yes, please! 🛒✨💍 #palmomas #demifinejewellery #waterproofjewellery #antitarnishjewelleryindia #everydayluxury #demifine 0:00 / 0:31</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/palmonas/ad-3.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-5.fna.fbcdn.net/o1/v/t2/f2/m86/AQPbhw20h88Cvjdx6qXB1cA-uysPDj87dbLcBFsv0LzQ9KxjGPYxtbtDfsrg5ykts7pb4yWpyFy4pOvwP5ynqsnoMOi9K7tnRETZO-s.mp4?_nc_cat=108&amp;_nc_oc=AdrQr1Mrp-8DbD45CMzr6J1f9O9nmDeb3GG6JpvQ8rrkoVbHb14puY4oPp63kViUrp-tGJ6K87YafdhKa6n29WjX&amp;_nc_sid=5e9851&amp;_nc_ht=video.fbom19-5.fna.fbcdn.net&amp;_nc_ohc=t--u_D8PrnQQ7kNvwEzelCc&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLmRhc2hfYmFzZWxpbmVfM192MSIsInhwdl9hc3NldF9pZCI6MTE1OTUyODA5OTcxNDQwNCwiYXNzZXRfYWdlX2RheXMiOjIyNiwidmlfdXNlY2FzZV9pZCI6MTAwOTksImR1cmF0aW9uX3MiOjMwLCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;vs=1209d04a2538e908&amp;_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC9EQzREOTU1MDBDODc3OTkzOTUwMzVCRTE3RTEwMjFCQ192aWRlb19kYXNoaW5pdC5tcDQVAALIARIAFQIYRmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC84MzcwOTU2MTIzMTIyOTNfODQ4ODM3MDI4ODEwNDk3MzEwMi5tcDQVAgLIARIAKAAYABsCiAd1c2Vfb2lsATEScHJvZ3Jlc3NpdmVfcmVjaXBlATEVAAAmyNXsx7WljwQVAigCQzMsF0A-AAAAAAAAGBJkYXNoX2Jhc2VsaW5lXzNfdjERAHUAZeadAQA&amp;_nc_gid=nHyqgGxf2ZaLxbharaqo7A&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af6Dv_rJb1nDwFMrbsDZvtvq_qzMVJpk47zyrtiw0VYnmw&amp;oe=6A166BA5" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">6mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 2825165597682340 4 ads use this creative and text Open Drop-down ​ See summary details Palmonas Sponsored Forget the soan papdi - this festive season, gift a Palmonas box instead!😉✨Go effortless gifting, the @shraddhakapoor way - 150+ combos, festive offers, and Palmonas glam in every box.💛 Find your perfect gift today, only with Palmonas 🎁 [Everyday luxury, Demi-fine jewellery, 18k gold vermeil, Gold tone jewellery, Timeless, Shraddha Kapoor Jewellery Brand, Buy Now, Elegance, Affordable luxury, Shop Now, Visit our jewellery store near you, Palmonas] #palmonas #demifinejewel</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/palmonas/ad-4.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-5.fna.fbcdn.net/o1/v/t2/f2/m69/AQPiyHqnjhR8yUp2qG_PVTVxStW_sHS62Pc5TaXbE-ihxtcL1NS8Bq88KnBsRxzNX_-TPZd7UGNFdT6RZrScrnQ7.mp4?strext=1&amp;_nc_cat=101&amp;_nc_oc=AdocITDaUkwRuhXwj8r5LpnwszdtJHJLZOXpmfTPO5Kj8_LU0tCkxB-FnVmhxnf98XmJoxSdeaHQlgC6nRXeEm9E&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-5.fna.fbcdn.net&amp;_nc_ohc=k-PHg5i0Pt4Q7kNvwE1tVH7&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6MTY3OTc3MzA1OTU2MzQ5OSwiYXNzZXRfYWdlX2RheXMiOjQ5NywidmlfdXNlY2FzZV9pZCI6MTAxMDEsImR1cmF0aW9uX3MiOjUyLCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;_nc_gid=nHyqgGxf2ZaLxbharaqo7A&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af5tS7Okz4_FEFFFbR9Q6E_hcHFGhoC35Z5WxJjXCi9VoA&amp;oe=6A1A5C85" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">6mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 3431691403638904 s use this creative and text Open Drop-down ​ See summary details Palmonas Sponsored More jewellery, less spending. Because style doesn't need to cost a fortune! 💖 #palmonas #shraddhakapoor #demifinejewellery #antitarnishjewelleryindia #lifetimewarranty #freshfashion #finejewellery 0:00 / 0:53</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/palmonas/ad-5.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-4.fna.fbcdn.net/o1/v/t2/f2/m69/AQNshWdxs3TycxDRB1ZRFEywrehWsubtRYNnn4oiEpWUjEG4tMFWPg41mojdFYsUzx_Za3qOWEHNt-fxd_pgO3P3.mp4?strext=1&amp;_nc_cat=109&amp;_nc_oc=AdrqcTeY3QmY9cSLc9S6Ufz7PdV7FArX0TYcfheaNwx287mLS9xhCn5hJg3ub_bpRDDs32psTxZbY5evFG4eeLWA&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-4.fna.fbcdn.net&amp;_nc_ohc=a41dKkKm9doQ7kNvwGZ9_re&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6MTE5ODQ4MzM2NTM1NDcwOCwiYXNzZXRfYWdlX2RheXMiOjQyMSwidmlfdXNlY2FzZV9pZCI6MTAxMDEsImR1cmF0aW9uX3MiOjE5LCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;_nc_gid=nHyqgGxf2ZaLxbharaqo7A&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af5hg3yekkEuZ8GRV4JyXKfQs4Y4JSZhwztJErFRm-fc3w&amp;oe=6A1A4785" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">6mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1358506272347106 ads use this creative and text Open Drop-down ​ See summary details Palmonas Sponsored When @shraddhakapoor wears it, you know it’s a vibe 💎✨ Lab-grown, planet-friendly, and pure elegance 🧚🏻🤍 [Everyday luxury, Demi-fine jewellery, 18k gold vermeil, Gold jewellery, Timeless elegance, Affordable luxury, Palmonas] #palmonas #demifinejewellery #lifetimewarranty #freshfashion #finejewellery #antitarnishjewelleryindia #labgrowndiamonds #summerjewellery 0:00 / 0:19</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/palmonas/ad-6.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-6.fna.fbcdn.net/o1/v/t2/f2/m86/AQP-lGwjOC0_iGTty3stitrD3U0HfzmeUlKtwo2uZqyoiFeCJIDNsrYcgsu0YqOYuLjSvyAR6YsqhsB7sQ2Pk4PKM7iVZt3kfMzDlX8.mp4?_nc_cat=111&amp;_nc_oc=AdozmSmk_9YzKUimvOO8IkwbSsxBaB1gwzF56MEZGQl-AMIAR5H5pv7bCM5mrdpOPLiCXHOdJVXqchdLyTDGErgG&amp;_nc_sid=5e9851&amp;_nc_ht=video.fbom19-6.fna.fbcdn.net&amp;_nc_ohc=PeCIn2CpZ3UQ7kNvwHOP959&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLmRhc2hfYmFzZWxpbmVfM192MSIsInhwdl9hc3NldF9pZCI6MjU1MjAwMjI1ODQ3NDIzNywiYXNzZXRfYWdlX2RheXMiOjI5MSwidmlfdXNlY2FzZV9pZCI6MTAwOTksImR1cmF0aW9uX3MiOjM3LCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;vs=4b80833cc8e7a75c&amp;_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC8zMzQ0MjRFQjJCQjFENjQwMEVCOTBDNjc5RTRGQkM4Ql92aWRlb19kYXNoaW5pdC5tcDQVAALIARIAFQIYR2lnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC8xODUwODkzNzM1NDg2MTc3XzY3Njc2OTcwNTQ3NjM5MzE5MjMubXA0FQICyAESACgAGAAbAogHdXNlX29pbAExEnByb2dyZXNzaXZlX3JlY2lwZQExFQAAJvrTqMGKwogJFQIoAkMzLBdAQq7ZFocrAhgSZGFzaF9iYXNlbGluZV8zX3YxEQB1AGXmnQEA&amp;_nc_gid=nHyqgGxf2ZaLxbharaqo7A&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af61T5oG3_UPCKkd-QgaAEpikyZUhBXe_9Be4a4gUmHrfw&amp;oe=6A163B74" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">6mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1801781893874554 ads use this creative and text Open Drop-down ​ See summary details Palmonas Sponsored Not just a brand, Palmonas is a category in itself. “We brought demi-fine jewellery as a category to India” - hear it straight from our co-founder Shraddha Kapoor, who turned her personal love for jewellery into a category-defining journey. [Everyday luxury, Demi-fine jewellery, 18k gold vermeil, Gold tone jewellery, Timeless, Buy Now, Elegance, Affordable luxury, Shop Now, Visit our jewellery store near you, Palmonas] #palmonas #demifinejewellery #lifetimewarranty #freshfashi</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/palmonas/ad-12.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-5.fna.fbcdn.net/o1/v/t2/f2/m86/AQOacLlzerL59dHLfboXK4oeJBVlzrdcp6ioCAZOzDrTokhwAY6bs74fI8EYE3ao4hOAMlc3iR-W5TXzjuAKB-1Zs16BnAFKmLIN0vc.mp4?_nc_cat=101&amp;_nc_oc=AdpOA7piU9diECJlXSzpvETeQNkIScSaYI8AAKDPpd0KtnVxemqjBzVAISHsJYYpMc66bwtla--e6hgeKoqo4Glm&amp;_nc_sid=5e9851&amp;_nc_ht=video.fbom19-5.fna.fbcdn.net&amp;_nc_ohc=uUag50aA45cQ7kNvwGcJIxE&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLmRhc2hfYmFzZWxpbmVfM192MSIsInhwdl9hc3NldF9pZCI6MTUyMDExODk4OTA0ODAwOCwiYXNzZXRfYWdlX2RheXMiOjE5NiwidmlfdXNlY2FzZV9pZCI6MTAwOTksImR1cmF0aW9uX3MiOjE2LCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;vs=980042b3b245b1f2&amp;_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC8wQTRDMTI5QzcyM0VCNzMyQzg5NUM2MUM4MTE3QjNCRV92aWRlb19kYXNoaW5pdC5tcDQVAALIARIAFQIYRmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC84NTE4MTQ5MjQ0NjQ4OThfMTU4NzczNjkzMzI5NjAzNTc3NS5tcDQVAgLIARIAKAAYABsCiAd1c2Vfb2lsATEScHJvZ3Jlc3NpdmVfcmVjaXBlATEVAAAmkKPehcmiswUVAigCQzMsF0AwMzMzMzMzGBJkYXNoX2Jhc2VsaW5lXzNfdjERAHUAZeadAQA&amp;_nc_gid=nHyqgGxf2ZaLxbharaqo7A&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af5XUaAiOAbibztC9EadLlJPMRbwiCo0J_diKaxZq_kkZQ&amp;oe=6A1658CE" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">6mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 2268751233630790 s use this creative and text Open Drop-down ​ See summary details Palmonas Sponsored @shraddhakapoor secret to everyday elegance✨#palmonas [Everyday luxury, Demi-fine jewellery, 18k gold vermeil, Gold tone jewellery, Timeless, Shraddha Kapoor Jewellery Brand, Buy Now, Elegance, Affordable luxury, Shop Now, Visit our jewellery store near you, Palmonas] #palmonas #demifinejewellery #lifetimewarranty #freshfashion #antitarnishjewellery #everydayluxury #waterproof #hypoallergenic #skinsafe #waterproof #sweatproof #treatyourself 0:00 / 0:16</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/palmonas/ad-17.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-3.fna.fbcdn.net/o1/v/t2/f2/m69/AQN4XrTrSqSMdl0Aq4YKSuCdO_WgbdkHAxHwsaw7cmBPN9qECwY_Ii2PT5G2u1WYyRsuzRd_0ZEVz9MBHXnEQcC1.mp4?strext=1&amp;_nc_cat=100&amp;_nc_oc=AdqOuKQh08uDuC_ZIbMW8ehtT5YgIfqDcuVz5rJTQJP94NlKszd_NMhND1nc9hdAL9jynpiPDHkRQRwjXGhzV4o4&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-3.fna.fbcdn.net&amp;_nc_ohc=tr4vsOCcpPQQ7kNvwE5RZPL&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6NTIwMTg1MDM3MDUzMjc2LCJhc3NldF9hZ2VfZGF5cyI6NjMzLCJ2aV91c2VjYXNlX2lkIjoxMDEwMSwiZHVyYXRpb25fcyI6MzEsInVybGdlbl9zb3VyY2UiOiJ3d3cifQ%3D%3D&amp;ccb=17-1&amp;_nc_gid=nHyqgGxf2ZaLxbharaqo7A&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af6PYlD3Lr70S7rTQOEpUebcbgzNLgiB7fR8U6O1g71ciw&amp;oe=6A1A4256" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">6mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 2535583893489250 ads use this creative and text Open Drop-down ​ See summary details Palmonas Sponsored Jewellery that is luxe but doesn’t break the bank? Yes, please! 🛒✨💍 #palmonas #demifinejewellery #waterproofjewellery #antitarnishjewelleryindia #everydayluxury #demifine 0:00 / 0:31</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media">
+      <img src="assets/ads/palmonas/ad-18.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">6mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1928530527761258 This ad has multiple versions ​ Open Drop-down ​ See ad details Palmonas Sponsored Obsessed with affordable luxury? Download the app and get exclusive offers on your favourite collection.💫 Your style journey starts here🤝 Download now and Discover more! Download the App &amp; Get Exclusive Offers | Palmonas✨ Use App</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/palmonas/ad-21.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-3.fna.fbcdn.net/o1/v/t2/f2/m69/AQOLCRuL_1RSLILk0g2jlU0hxBSEOlaL_IiEeS7rYuXVg4zCzHHkqHU0UMy3oJXb2rnn-n2a7SgT4MtjSmdRi9Xf.mp4?strext=1&amp;_nc_cat=100&amp;_nc_oc=AdrbFB0Ru0HFa6vrY1iCYB-cL1R2xkgCbohJIXIsBKk0ek0d4ElnltKcE_OtFLPDLI3aiFHtQCRnjhl5ZMjdInYF&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-3.fna.fbcdn.net&amp;_nc_ohc=G4xuTy7g5VgQ7kNvwF5GYpv&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6MTk4NTM3NjIzMTkwNzgxOCwiYXNzZXRfYWdlX2RheXMiOjU2MCwidmlfdXNlY2FzZV9pZCI6MTAxMDEsImR1cmF0aW9uX3MiOjcyLCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;_nc_gid=nHyqgGxf2ZaLxbharaqo7A&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af7f4guu4cBbNwZHvZFAgL9WQlpCmbrTwf16nC6zDOMQwA&amp;oe=6A1A2E3E" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">6mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 735441572251026 ads use this creative and text Open Drop-down ​ See summary details Palmonas Sponsored It’s not just jewellery – it’s a whole vibe 💓Not just about bling – it’s about everyday magic ✨ #palmonas #demifinejewellery #antitarnishjewelleryindia #behindthescenes #ourstory 0:00 / 1:13</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/palmonas/ad-28.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-5.fna.fbcdn.net/o1/v/t2/f2/m69/AQPiyHqnjhR8yUp2qG_PVTVxStW_sHS62Pc5TaXbE-ihxtcL1NS8Bq88KnBsRxzNX_-TPZd7UGNFdT6RZrScrnQ7.mp4?strext=1&amp;_nc_cat=101&amp;_nc_oc=AdocITDaUkwRuhXwj8r5LpnwszdtJHJLZOXpmfTPO5Kj8_LU0tCkxB-FnVmhxnf98XmJoxSdeaHQlgC6nRXeEm9E&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-5.fna.fbcdn.net&amp;_nc_ohc=k-PHg5i0Pt4Q7kNvwE1tVH7&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6MTY3OTc3MzA1OTU2MzQ5OSwiYXNzZXRfYWdlX2RheXMiOjQ5NywidmlfdXNlY2FzZV9pZCI6MTAxMDEsImR1cmF0aW9uX3MiOjUyLCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;_nc_gid=d_xFzufTGpHx-gBba2ycZA&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af44nPwDj4HB63_SeP18j0JkFrNKtcz_2mgCuyNoFFPXbA&amp;oe=6A1A5C85" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">6mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 3384571721700250 s use this creative and text Open Drop-down ​ See summary details Palmonas Sponsored More jewellery, less spending. Because style doesn't need to cost a fortune! 💖 #palmonas #shraddhakapoor #demifinejewellery #antitarnishjewelleryindia #lifetimewarranty #freshfashion #finejewellery 0:00 / 0:53</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/palmonas/ad-31.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-5.fna.fbcdn.net/o1/v/t2/f2/m86/AQOacLlzerL59dHLfboXK4oeJBVlzrdcp6ioCAZOzDrTokhwAY6bs74fI8EYE3ao4hOAMlc3iR-W5TXzjuAKB-1Zs16BnAFKmLIN0vc.mp4?_nc_cat=101&amp;_nc_oc=AdpOA7piU9diECJlXSzpvETeQNkIScSaYI8AAKDPpd0KtnVxemqjBzVAISHsJYYpMc66bwtla--e6hgeKoqo4Glm&amp;_nc_sid=5e9851&amp;_nc_ht=video.fbom19-5.fna.fbcdn.net&amp;_nc_ohc=uUag50aA45cQ7kNvwGcJIxE&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLmRhc2hfYmFzZWxpbmVfM192MSIsInhwdl9hc3NldF9pZCI6MTUyMDExODk4OTA0ODAwOCwiYXNzZXRfYWdlX2RheXMiOjE5NiwidmlfdXNlY2FzZV9pZCI6MTAwOTksImR1cmF0aW9uX3MiOjE2LCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;vs=980042b3b245b1f2&amp;_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC8wQTRDMTI5QzcyM0VCNzMyQzg5NUM2MUM4MTE3QjNCRV92aWRlb19kYXNoaW5pdC5tcDQVAALIARIAFQIYRmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC84NTE4MTQ5MjQ0NjQ4OThfMTU4NzczNjkzMzI5NjAzNTc3NS5tcDQVAgLIARIAKAAYABsCiAd1c2Vfb2lsATEScHJvZ3Jlc3NpdmVfcmVjaXBlATEVAAAmkKPehcmiswUVAigCQzMsF0AwMzMzMzMzGBJkYXNoX2Jhc2VsaW5lXzNfdjERAHUAZeadAQA&amp;_nc_gid=d_xFzufTGpHx-gBba2ycZA&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af4uKXiuo22wVJ_wpJQwd21XEjm_XfrxLmogjg8GPVxqyQ&amp;oe=6A1658CE" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">6mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 2520582055063017 ads use this creative and text Open Drop-down ​ See summary details Palmonas Sponsored @shraddhakapoor secret to everyday elegance✨#palmonas [Everyday luxury, Demi-fine jewellery, 18k gold vermeil, Gold tone jewellery, Timeless, Shraddha Kapoor Jewellery Brand, Buy Now, Elegance, Affordable luxury, Shop Now, Visit our jewellery store near you, Palmonas] #palmonas #demifinejewellery #lifetimewarranty #freshfashion #antitarnishjewellery #everydayluxury #waterproof #hypoallergenic #skinsafe #waterproof #sweatproof #treatyourself 0:00 / 0:16</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/palmonas/ad-37.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-1.fna.fbcdn.net/o1/v/t2/f2/m69/AQMI5Itv5Qg-dglQf2b24I1lZ_M6MwGnwACTU1FPpfggnD7p1Yo_vwk-oiIvK_nHN6OhlpTy8BQ8kl-AW0dBozo6.mp4?strext=1&amp;_nc_cat=103&amp;_nc_oc=AdoRxT17qON5hO2_L76g0KL0nDrvy8oBqybMLqypm60UovcDRyo7wZWaC_uwaZgKFMBZwaexY06U2HZyxdUrRQrz&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-1.fna.fbcdn.net&amp;_nc_ohc=fqZT4bCOJE0Q7kNvwGs3j4R&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6OTA1MDQzODUxNDE1Mzc1LCJhc3NldF9hZ2VfZGF5cyI6NTA4LCJ2aV91c2VjYXNlX2lkIjoxMDEwMSwiZHVyYXRpb25fcyI6NjUsInVybGdlbl9zb3VyY2UiOiJ3d3cifQ%3D%3D&amp;ccb=17-1&amp;_nc_gid=etucpNKuRhC0Oku-wzN_SQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af5P67Yr4mqVd3_X8q5EhvYh_hANmrmGlxciu3jhl-Vl-g&amp;oe=6A1A5007" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">6mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1248194530449427 en Drop-down ​ See ad details Palmonas Sponsored Another day, another store, another milestone! We're just getting started ✨💖 #palmonas #shraddhakapoor #pune #demifinejewellery #waterproofjewellery #antitarnishjewelleryindia 0:00 / 1:05 WWW.PALMONAS.COM Palmonas Order now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/palmonas/ad-38.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-3.fna.fbcdn.net/o1/v/t2/f2/m69/AQN4XrTrSqSMdl0Aq4YKSuCdO_WgbdkHAxHwsaw7cmBPN9qECwY_Ii2PT5G2u1WYyRsuzRd_0ZEVz9MBHXnEQcC1.mp4?strext=1&amp;_nc_cat=100&amp;_nc_oc=AdqOuKQh08uDuC_ZIbMW8ehtT5YgIfqDcuVz5rJTQJP94NlKszd_NMhND1nc9hdAL9jynpiPDHkRQRwjXGhzV4o4&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-3.fna.fbcdn.net&amp;_nc_ohc=tr4vsOCcpPQQ7kNvwE5RZPL&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6NTIwMTg1MDM3MDUzMjc2LCJhc3NldF9hZ2VfZGF5cyI6NjMzLCJ2aV91c2VjYXNlX2lkIjoxMDEwMSwiZHVyYXRpb25fcyI6MzEsInVybGdlbl9zb3VyY2UiOiJ3d3cifQ%3D%3D&amp;ccb=17-1&amp;_nc_gid=etucpNKuRhC0Oku-wzN_SQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af608Hl5kAga4AJfd35ArfRc0fO0ub5KsrhCkonMc1FFWw&amp;oe=6A1A4256" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">6mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 875707265148492 ads use this creative and text Open Drop-down ​ See summary details Palmonas Sponsored Jewellery that is luxe but doesn’t break the bank? Yes, please! 🛒✨💍 #palmonas #demifinejewellery #waterproofjewellery #antitarnishjewelleryindia #everydayluxury #demifine 0:00 / 0:31</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/palmonas/ad-39.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-3.fna.fbcdn.net/o1/v/t2/f2/m366/AQMWDoVO_LuHooYGISaEj2R3nPzX_wcxUgDqx0MNlnGZSFMMz7X-jF74JowtoQ-Vdah3m1VvLemiFHQoIPZg4sz-igbZgcO2FfrwBZFKvQ.mp4?_nc_cat=100&amp;_nc_oc=AdrK2lYKHz_Oyoh2Moo0hAhIYZFojLodT6HlPH00k9MwC3RXoBQGjjxTmDl0oODklfUxPbuR8LnzefIcub7gRcau&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-3.fna.fbcdn.net&amp;_nc_ohc=TnWc-I1ruXcQ7kNvwGmS8s8&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6MTgwMDQxNTEzNzUxMDc3OCwiYXNzZXRfYWdlX2RheXMiOjI3OSwidmlfdXNlY2FzZV9pZCI6MTA3OTksImR1cmF0aW9uX3MiOjI3LCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;_nc_gid=etucpNKuRhC0Oku-wzN_SQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af4mrBUod4FHm5d6NriHZg7FbI6HzbOEZCuKAem8wxHNCg&amp;oe=6A1A5C2A" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">6mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1872727419997257  Drop-down ​ See ad details Palmonas Sponsored ✨When she chooses Palmonas, you know it’s not just jewellery it’s a statement.Actress Avneet Kaur shines in our luxe jewellery pieces. Now it’s your turn to own the spotlight. Why is everyone loving Palmonas? ✅ 18K Thick Gold Plating ✅ Water &amp; Tarnish Proof ✅ Skin-Safe ✅ Effortless Glam, Everyday Ready 0:00 / 0:27 PALMONAS.COM Still Waiting?Our Offers are Live. Order now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/palmonas/ad-40.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-6.fna.fbcdn.net/o1/v/t2/f2/m86/AQP-lGwjOC0_iGTty3stitrD3U0HfzmeUlKtwo2uZqyoiFeCJIDNsrYcgsu0YqOYuLjSvyAR6YsqhsB7sQ2Pk4PKM7iVZt3kfMzDlX8.mp4?_nc_cat=111&amp;_nc_oc=AdozmSmk_9YzKUimvOO8IkwbSsxBaB1gwzF56MEZGQl-AMIAR5H5pv7bCM5mrdpOPLiCXHOdJVXqchdLyTDGErgG&amp;_nc_sid=5e9851&amp;_nc_ht=video.fbom19-6.fna.fbcdn.net&amp;_nc_ohc=PeCIn2CpZ3UQ7kNvwHOP959&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLmRhc2hfYmFzZWxpbmVfM192MSIsInhwdl9hc3NldF9pZCI6MjU1MjAwMjI1ODQ3NDIzNywiYXNzZXRfYWdlX2RheXMiOjI5MSwidmlfdXNlY2FzZV9pZCI6MTAwOTksImR1cmF0aW9uX3MiOjM3LCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;vs=4b80833cc8e7a75c&amp;_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC8zMzQ0MjRFQjJCQjFENjQwMEVCOTBDNjc5RTRGQkM4Ql92aWRlb19kYXNoaW5pdC5tcDQVAALIARIAFQIYR2lnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC8xODUwODkzNzM1NDg2MTc3XzY3Njc2OTcwNTQ3NjM5MzE5MjMubXA0FQICyAESACgAGAAbAogHdXNlX29pbAExEnByb2dyZXNzaXZlX3JlY2lwZQExFQAAJvrTqMGKwogJFQIoAkMzLBdAQq7ZFocrAhgSZGFzaF9iYXNlbGluZV8zX3YxEQB1AGXmnQEA&amp;_nc_gid=etucpNKuRhC0Oku-wzN_SQ&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af55wiWRsh53TAb1yYhvjL5dmWTPHXZvShtpp7kZFluoHg&amp;oe=6A163B74" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">6mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1350267373494515 ads use this creative and text Open Drop-down ​ See summary details Palmonas Sponsored Not just a brand, Palmonas is a category in itself. “We brought demi-fine jewellery as a category to India” - hear it straight from our co-founder Shraddha Kapoor, who turned her personal love for jewellery into a category-defining journey. [Everyday luxury, Demi-fine jewellery, 18k gold vermeil, Gold tone jewellery, Timeless, Buy Now, Elegance, Affordable luxury, Shop Now, Visit our jewellery store near you, Palmonas] #palmonas #demifinejewellery #lifetimewarranty #freshfashi</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media">
+      <img src="assets/ads/palmonas/ad-42.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">6mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1909361663313273 This ad has multiple versions ​ Open Drop-down ​ See ad details Palmonas Sponsored Obsessed with affordable luxury? Download the app and get exclusive offers on your favourite collection.💫 Your style journey starts here🤝 Download now and Discover more! Download the App &amp; Get Exclusive Offers |Palmonas✨ Install Now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/palmonas/ad-52.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-6.fna.fbcdn.net/o1/v/t2/f2/m69/AQN3-McCTboUXWRH_i9XDzXDzlLUu7Ky42-sJZDKomSyCkndMNHOlSlBoFjZxZvsgkCgbDKyn4D1v61BmUsPPPCS.mp4?strext=1&amp;_nc_cat=111&amp;_nc_oc=AdqflkwkgFlA9l_N0OqhWe0gEE0lJF7wRNBj4BZO2NJqObedw9DQ30cvgJkoD2LmfY8aKC99QkAzgDzKfu1mBc3l&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-6.fna.fbcdn.net&amp;_nc_ohc=ciSc_1U--08Q7kNvwECh76h&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6OTY3OTIwMDM4NTYwMTcwLCJhc3NldF9hZ2VfZGF5cyI6NTExLCJ2aV91c2VjYXNlX2lkIjoxMDEwMSwiZHVyYXRpb25fcyI6NzcsInVybGdlbl9zb3VyY2UiOiJ3d3cifQ%3D%3D&amp;ccb=17-1&amp;_nc_gid=g4kD4HfxdPVTHHaaPAQZ1A&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af5V3to5S0c8B2mwvRA3CMyTcWmeTIa-vKRX1X6rL4vNXg&amp;oe=6A1A3B47" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">6mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1918737809075088 s use this creative and text Open Drop-down ​ See summary details Palmonas Sponsored You guys ask, and we deliver 🙈💖 #palmonas #shraddhakapoor #demifinejewellery #waterproofjewellery #antitarnishjewelleryindia 0:00 / 1:17</div>
+      
+    </div>
+  </div>
+  <div class="ad-card proven">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/palmonas/ad-58.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-5.fna.fbcdn.net/o1/v/t2/f2/m86/AQOacLlzerL59dHLfboXK4oeJBVlzrdcp6ioCAZOzDrTokhwAY6bs74fI8EYE3ao4hOAMlc3iR-W5TXzjuAKB-1Zs16BnAFKmLIN0vc.mp4?_nc_cat=101&amp;_nc_oc=AdpOA7piU9diECJlXSzpvETeQNkIScSaYI8AAKDPpd0KtnVxemqjBzVAISHsJYYpMc66bwtla--e6hgeKoqo4Glm&amp;_nc_sid=5e9851&amp;_nc_ht=video.fbom19-5.fna.fbcdn.net&amp;_nc_ohc=uUag50aA45cQ7kNvwGcJIxE&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLmRhc2hfYmFzZWxpbmVfM192MSIsInhwdl9hc3NldF9pZCI6MTUyMDExODk4OTA0ODAwOCwiYXNzZXRfYWdlX2RheXMiOjE5NiwidmlfdXNlY2FzZV9pZCI6MTAwOTksImR1cmF0aW9uX3MiOjE2LCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;vs=980042b3b245b1f2&amp;_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC8wQTRDMTI5QzcyM0VCNzMyQzg5NUM2MUM4MTE3QjNCRV92aWRlb19kYXNoaW5pdC5tcDQVAALIARIAFQIYRmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC84NTE4MTQ5MjQ0NjQ4OThfMTU4NzczNjkzMzI5NjAzNTc3NS5tcDQVAgLIARIAKAAYABsCiAd1c2Vfb2lsATEScHJvZ3Jlc3NpdmVfcmVjaXBlATEVAAAmkKPehcmiswUVAigCQzMsF0AwMzMzMzMzGBJkYXNoX2Jhc2VsaW5lXzNfdjERAHUAZeadAQA&amp;_nc_gid=g4kD4HfxdPVTHHaaPAQZ1A&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af6PUqmu4lY5NKLtjEwg612RIESbaF6PgQIOVuy7fPm1zw&amp;oe=6A1658CE" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration proven-badge">6mo ✓</span>
+        <span class="star">proven performer</span>
+      </div>
+      <div class="ad-copy">​  Library ID: 1883900078867692 ads use this creative and text Open Drop-down ​ See summary details Palmonas Sponsored @shraddhakapoor secret to everyday elegance✨#palmonas [Everyday luxury, Demi-fine jewellery, 18k gold vermeil, Gold tone jewellery, Timeless, Shraddha Kapoor Jewellery Brand, Buy Now, Elegance, Affordable luxury, Shop Now, Visit our jewellery store near you, Palmonas] #palmonas #demifinejewellery #lifetimewarranty #freshfashion #antitarnishjewellery #everydayluxury #waterproof #hypoallergenic #skinsafe #waterproof #sweatproof #treatyourself 0:00 / 0:16</div>
+      
+    </div>
+  </div></div>
+    </div>
+  </div>
+  <div class="brand-section" id="brand-6">
+    <div class="brand-header" onclick="toggleBrand(6)">
+      <div class="brand-title-row">
+        <span class="brand-name">Cosa Nostraa</span>
+        <span class="brand-stats">5 ads · 0 proven</span>
+      </div>
+      <span class="chevron" id="chev-6">▼</span>
+    </div>
+
+    <div class="brand-body" id="body-6">
+      
+      <div class="analysis-grid">
+        <div class="analysis-card">
+          <div class="analysis-label">What they're selling</div>
+          <div class="analysis-value">Premium brooches and button covers positioned as statement accessories for formal/wedding occasions.</div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-label">Dominant hook</div>
+          <div class="analysis-value">Occasion-based urgency + aspirational transformation (e.g., 'perfect engagement look', 'gift for him', 'stand out').</div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-label">What's working</div>
+          <div class="analysis-value">Occasion-specific targeting (weddings, engagements, gifting) creates clear purchase intent; brooches are low-competition niche with defined use case; premium positioning at accessible price attracts aspiration-driven buyers.</div>
+        </div>
+        <div class="analysis-card weakness">
+          <div class="analysis-label">Their weakness</div>
+          <div class="analysis-value">Too formal, too precious, too special-occasion-only — no everyday wearability angle; overuses hype language that feels try-hard; no personality or POV beyond 'look premium'; ignores men who want jewellery as daily self-expression, not just event dressing.</div>
+        </div>
+      </div>
+
+      <div class="patterns-row">
+        <div class="patterns-label">Messaging patterns</div>
+        <div class="patterns-list">
+          <span class="pattern-tag">Heavy reliance on formal/wedding occasions as purchase triggers</span><span class="pattern-tag">Premium positioning through words like 'refined', 'exclusive', 'limited edition', 'crafted'</span><span class="pattern-tag">Emojis + urgency tactics (5% OFF, Limited Edition, Shop Now) in every ad</span>
+        </div>
+      </div>
+
+      <div class="yaani-angle">
+        <div class="yaani-angle-label">Yaani's angle against Cosa Nostraa</div>
+        <div class="yaani-angle-body">Position Yaani as 'jewellery for every day, not just the big day' — show rings, chains, bracelets worn casually with basics (white tee, denim, everyday fits). Counter their occasion-lock with 'You don't need a wedding to wear something real.' Lean into brass as the honest, everyday metal vs. their formal-only accessory trap. Visual: real guys, real days, zero blazers.</div>
+      </div>
+      
+
+      <div class="ads-label">Ads (sorted by impressions)</div>
+      <div class="ads-grid">
+  <div class="ad-card">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/cosa-nostraa/ad-0.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-3.fna.fbcdn.net/o1/v/t2/f2/m412/AQO2wJeXOjgMxu9vAEwaq_K-mIlgi9_wwWw0YVaURZolWcfQvDNpUhZ7sFXmH2qclJuKzDAHS8CaKJ8RXhs4ARpg-s44ABStOH52ib6PqQ.mp4?_nc_cat=100&amp;_nc_oc=Adq2bUq9g_If2f8TLzz-ISJc3EC8JROcAVYp0Ibyo-tZi6GuouGAm6X2mtIpdDneAjHHuRPLghLqhbuP-_r5VjO1&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-3.fna.fbcdn.net&amp;_nc_ohc=y3tspqfk6ZoQ7kNvwH49d8S&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6MTYxNjUxMzgwOTU0MTQ4NiwiYXNzZXRfYWdlX2RheXMiOjEwMiwidmlfdXNlY2FzZV9pZCI6MTA3OTksImR1cmF0aW9uX3MiOjQ2LCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;_nc_gid=e3GHFzSK368gd1W0NNg_9A&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af6uBPirWUjkOuKBwgzWSQ_NwEo-A3AJSjQIiWP9JujYAQ&amp;oe=6A1A5D3E" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">1mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 1517410016729318  Open Drop-down ​ See ad details Cosa Nostraa Studio Sponsored A new expression of strength and belief. Cosa Nostraa presents the Mahadev Brooch Collection — crafted to elevate style with meaning. 🆕 New Launch ✨ 5% OFF on your first order 👉 Shop Now 0:00 / 0:47 COSANOSTRAA.COM Introducing the Mahadev Brooch Collection Shop now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media">
+      <img src="assets/ads/cosa-nostraa/ad-1.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">1mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 809694515085676  ad has multiple versions ​ Open Drop-down ​ See ad details Cosa Nostraa Studio Sponsored Looking for a refined gift for him? 🎁 A premium brooch is the perfect finishing touch to his blazer, suit or sherwani. Subtle. Stylish. Timeless. ✨ 5% OFF on your first purchase Shop now. COSANOSTRAA.COM Gift Him a Premium Brooch Explore Cosa Nostraa's exclusive collection of cufflinks, brooches, buttons, and lapel pins. Immerse yourself in our magnificent designs inspired by wildlife, architecture, and cultures worldwide. Shop Now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/cosa-nostraa/ad-2.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-6.fna.fbcdn.net/o1/v/t2/f2/m412/AQN7_2UVi50PRJZ3fb6Xdj4sLoYP29iDaJKdvwDQ4i5xBSR_RSwm8wKuprxi3IK3kwr1FkM41O_jmq8sCnoxEzIMbZcN7ANkX6F9s8UaZA.mp4?_nc_cat=107&amp;_nc_oc=AdrGPuS_l2YgYt1M1zVx_QEV2ao7OrDdG41B6v49Hob4zvhNDiWBCaJBV841ZChJer2LuCVg8NeKPPbwBLSvseXz&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-6.fna.fbcdn.net&amp;_nc_ohc=OSeFKTMamZoQ7kNvwHRpDNn&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6MTEwNzU5MzYwODIyMzIwNiwiYXNzZXRfYWdlX2RheXMiOjIzMCwidmlfdXNlY2FzZV9pZCI6MTA3OTksImR1cmF0aW9uX3MiOjIwLCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;_nc_gid=e3GHFzSK368gd1W0NNg_9A&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af4Z7bp05zuyN-WV3fK9loe5mCTwE7cF7sGaRfVyfaCh1A&amp;oe=6A1A3C1F" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">1mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 1285988516928229  Open Drop-down ​ See ad details Cosa Nostraa Studio Sponsored The secret to his perfect engagement or wedding look? Our Best-Selling Brooch — elegant, powerful &amp; timeless. 💫 👑 Crafted for men who love to stand out. 🛍️ Buy Now – Limited Edition 0:00 / 0:21 COSANOSTRAA.COM Our Best-Selling Brooch Shop now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/cosa-nostraa/ad-6.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-4.fna.fbcdn.net/o1/v/t2/f2/m366/AQOFbeYkQBqaXVSI1ZAIoglppQO4u1bMjmwVfynlYba6qq3CcvkaKIyl7uoeG6oam5INlvQFWFsRE-7D5_bRTuv83qQeqlUx5Nb0_0Qrqw.mp4?_nc_cat=109&amp;_nc_oc=AdrztSxUCvaeD3jrIzoOdoJPCNIcUoVFiyxs_ShaXMe7_BS8nhz-XDPm0-HXiA_k0EP7MCaezxhror7fYVKWQCtI&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-4.fna.fbcdn.net&amp;_nc_ohc=8zbTjh9fqAcQ7kNvwG2di2c&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnN2ZV9zZCIsInhwdl9hc3NldF9pZCI6MzE1MjkyNDYyODIxODE1NywiYXNzZXRfYWdlX2RheXMiOjI1OCwidmlfdXNlY2FzZV9pZCI6MTA3OTksImR1cmF0aW9uX3MiOjE4LCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&amp;ccb=17-1&amp;_nc_gid=e3GHFzSK368gd1W0NNg_9A&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af4RCtw0utMiUXulnnSjkEWz6YFoka9Wb5qi7pQniBQE_A&amp;oe=6A1A3541" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">1mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 2046115572782183  Drop-down ​ See ad details Cosa Nostraa Studio Sponsored 💎 Not just accessories. Statements. ✨ Explore our premium Brooch Collection made for modern men. 👉 Shop Now &amp; elevate your look. 0:00 / 0:19 COSANOSTRAA.COM Own Your Statement Look Free Shipping | COD Available Shop now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media video-wrap">
+        <video controls poster="assets/ads/cosa-nostraa/ad-3.jpg" preload="none" class="ad-video">
+          <source src="https://video.fbom19-1.fna.fbcdn.net/o1/v/t2/f2/m367/AQN2ywHWqLB6H7i83f2F_C2n81YeFCQWH70JUDzJlcd0jkccOzCriSSNqV29TVr6HC5EZYeNV0_cUpard85NwvukNSswdxOyOYAERJe_yA.mp4?_nc_cat=103&amp;_nc_oc=Adp3w4Guza-e5FCwx0e6pfFwab9fUIZmjGVUWiScgecfVNvQ9S9JBhhPR1Fzu6uGL2HjkeAjR-Z4b0dB8tvAJ-i8&amp;_nc_sid=8bf8fe&amp;_nc_ht=video.fbom19-1.fna.fbcdn.net&amp;_nc_ohc=dQygPZHCRQ8Q7kNvwFKNDF8&amp;efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5WSV9VU0VDQVNFX1BST0RVQ1RfVFlQRS4uQzMuMzYwLnByb2dyZXNzaXZlX2gyNjQtYmFzaWMtZ2VuMl8zNjBwIiwieHB2X2Fzc2V0X2lkIjoxNTQ3MjAyNzI3MDI3MjcwLCJhc3NldF9hZ2VfZGF5cyI6MTMsInZpX3VzZWNhc2VfaWQiOjEwODI3LCJkdXJhdGlvbl9zIjo0MiwidXJsZ2VuX3NvdXJjZSI6Ind3dyJ9&amp;ccb=17-1&amp;_nc_gid=e3GHFzSK368gd1W0NNg_9A&amp;_nc_ss=7b289&amp;_nc_zt=28&amp;oh=00_Af5NvO52KgEw4EFd6RcVQg2-eZ2O0NRhSrPono9AG07yxA&amp;oe=6A1A30C3" type="video/mp4">
+        </video>
+        <span class="media-tag video-tag">VIDEO</span>
+      </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">0mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 1287698746258882 s use this creative and text Open Drop-down ​ See summary details Jatin khirbat with Cosa Nostraa Studio Sponsored Recently found something very interesting from @cosanostraastudio These Button Covers for shirts and kurtas. A small detail like this can make a simple look feel much more stylish and intentional. No extra effort, but a visible difference. Share this with someone who loves the art of dressing well. Until next time, be a gentleman. #button #buttoncover #shirts #jatinkhirbat #kurta 0:00 / 0:42</div>
+      
+    </div>
+  </div></div>
+    </div>
+  </div>
+  <div class="brand-section" id="brand-7">
+    <div class="brand-header" onclick="toggleBrand(7)">
+      <div class="brand-title-row">
+        <span class="brand-name">Swasha</span>
+        <span class="brand-stats">5 ads · 0 proven</span>
+      </div>
+      <span class="chevron" id="chev-7">▼</span>
+    </div>
+
+    <div class="brand-body" id="body-7">
+      
+      <div class="analysis-grid">
+        <div class="analysis-card">
+          <div class="analysis-label">What they're selling</div>
+          <div class="analysis-value">Affordable fashion jewellery for everyone (women, men, kids) with heavy promotional discounting as the primary pull.</div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-label">Dominant hook</div>
+          <div class="analysis-value">Buy 1 Get 1 Free — pure discount-driven acquisition with transactional language</div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-label">What's working</div>
+          <div class="analysis-value">BOGO creates strong impulse buying behavior and lowers perceived risk; stacking offers (prepaid discount + free shipping + COD) removes friction for first-time buyers in tier 2/3 cities</div>
+        </div>
+        <div class="analysis-card weakness">
+          <div class="analysis-label">Their weakness</div>
+          <div class="analysis-value">Zero brand identity — purely transactional with no emotional hook, material story, or target clarity; the jewellery could be for anyone, meaning it's really for no one; no differentiation beyond price</div>
+        </div>
+      </div>
+
+      <div class="patterns-row">
+        <div class="patterns-label">Messaging patterns</div>
+        <div class="patterns-list">
+          <span class="pattern-tag">Lead with BOGO offer using emojis for attention</span><span class="pattern-tag">Mass appeal positioning (women/men/kids all in one breath)</span><span class="pattern-tag">Functional feature lists (free shipping, COD, prepaid discount)</span><span class="pattern-tag">Generic aspirational language ('elevate every look', 'effortlessly stylish')</span>
+        </div>
+      </div>
+
+      <div class="yaani-angle">
+        <div class="yaani-angle-label">Yaani's angle against Swasha</div>
+        <div class="yaani-angle-body">Position against the discount carnival: 'Not BOGO. Not plated. Just brass that lasts.' — own material honesty and longevity while their stuff needs gimmicks to move; show one guy, one piece, worn daily for months with visible patina as proof of quality over quantity</div>
+      </div>
+      
+
+      <div class="ads-label">Ads (sorted by impressions)</div>
+      <div class="ads-grid">
+  <div class="ad-card">
+    <div class="ad-media">
+      <img src="assets/ads/swasha/ad-1.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">2mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 1940827563491082 ​ This ad has multiple versions ​ Open Drop-down ​ See ad details Swashaa Sponsored ✨ BUY 1 GET 1 FREE ✨ Explore the complete Swashaa Jewellery Collection — stylish designs for Women, Men, and Kids, crafted to elevate every look and every moment. ✨ From elegant necklaces and bracelets to bold chains, kadas, and adorable kids jewellery — find the perfect piece for every style and occasion. • Trendy jewellery for Women, Men &amp; Kids • Anti-tarnish &amp; long-lasting shine • Skin-safe &amp; comfortable for daily wear • Premium quality at great value • Free Shipping available</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media">
+      <img src="assets/ads/swasha/ad-2.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">2mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 951414711176814 ​ This ad has multiple versions ​ Open Drop-down ​ See ad details Swashaa Sponsored ✨ BUY 1 GET 1 FREE ✨ Explore the complete Swashaa Jewellery Collection — stylish designs for Women, Men, and Kids, crafted to elevate every look and every moment. ✨ From elegant necklaces and bracelets to bold chains, kadas, and adorable kids jewellery — find the perfect piece for every style and occasion. • Trendy jewellery for Women, Men &amp; Kids • Anti-tarnish &amp; long-lasting shine • Skin-safe &amp; comfortable for daily wear • Premium quality at great value • Free Shipping available </div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media">
+      <img src="assets/ads/swasha/ad-5.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">2mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 1242669220794186 This ad has multiple versions ​ Open Drop-down ​ See ad details Swashaa Sponsored 💕 Buy 1 Get 1 Free!💕 One bracelet for every mood—stack it, gift it, or keep it all for yourself. 💎 SWASHAA.COM Swashaa Shop Now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media">
+      <img src="assets/ads/swasha/ad-6.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">2mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 2557148681384413 This ad has multiple versions ​ Open Drop-down ​ See ad details Swashaa Sponsored 🖤Buy 1 Get 1 FREE!🖤 One bracelet for every mood—stack it, gift it, or style it your way with Swashaa Women’s Bracelets. ✨ • Extra ₹50 Off on Prepaid • Free Shipping • COD Available • Fast Delivery SWASHAA.COM Swashaa Free Shipping &amp; COD Shop Now</div>
+      
+    </div>
+  </div>
+  <div class="ad-card">
+    <div class="ad-media">
+      <img src="assets/ads/swasha/ad-9.jpg" class="ad-img" alt="ad creative">
+      <span class="media-tag">IMAGE</span>
+    </div>
+    <div class="ad-body">
+      <div class="ad-meta">
+        <span class="ad-duration">2mo</span>
+        
+      </div>
+      <div class="ad-copy">​  Library ID: 1095772586072958 ​ This ad has multiple versions ​ Open Drop-down ​ See ad details Swashaa Sponsored ✨ Buy 1 Get 1 Free ✨ Upgrade your look instantly with Swashaa Men’s Earrings—modern, durable, and effortlessly stylish. • Extra ₹50 Off on Prepaid • Free Shipping • COD Available • Fast Delivery SWASHAA.COM Swashaa * Color: Silver, 18K Gold * Material: Stainless Steel * Size: 0.9 cm (Length) * Clasp Type: Screw Back Clasp * Set Of 1 Pair * Specification: Anti-tarnish &amp; Premium Quality Minimal bezel-set round CZ studs in silver-tone and gold-tone, designed for an understated yet s</div>
+      
+    </div>
+  </div></div>
+    </div>
+  </div>
+  </div>
+
+  <!-- Strategy tab -->
+  <div id="tab-strategy" class="tab">
+    <div class="strategy-box">
+      <p><em>Based on 79 active Meta ads from 8 direct competitors.</em></p>
+      <p># YAANI STRATEGIC SUMMARY</p><p>## 1. WHAT THE CATEGORY IS DOING (TERRITORY TO AVOID)</p><p>The men's jewellery ad space is a permission-seeking circus. Everyone's either:</p><p><strong>Convincing skeptics</strong> — talking to guys who don't wear jewellery yet, which means ads are stuffed with reasons, proofs, and feature dumps (waterproof! tarnish-free! celebrity-approved!)</p><p><strong>Hiding material truth</strong> — plated stuff pretending longevity while defensively claiming "anti-tarnish," or burying brass/material under aspirational fluff</p><p><strong>Discount-dependence</strong> — 40-70% off, BOGO, stacking offers. Training customers to wait for sales, not value the product</p><p><strong>Borrowed credibility</strong> — celebrities, specs (14k, AAA, 925), hype language ("luxury," "premium," "statement") doing all the heavy lifting because the brand has no POV</p><p><strong>Versatility as personality</strong> — "works with everything" means it stands for nothing</p><p>The entire category is transactional, defensive, and exhausting. They're all shouting at the unconvinced.</p><p>---</p><p>## 2. THE OPENING YAANI OWNS</p><p><strong>Material honesty as confidence.</strong></p><p>Not one competitor is proud of what their jewellery actually *is*. They're all hiding (plating), compensating (specs), or justifying (discounts). </p><p>Yaani says: "It's brass. It doesn't pretend. It doesn't flake. It ages with you."</p><p>This isn't for the guy who needs convincing—it's for the guy who already wears jewellery and is tired of shit that *lies*. He's had the silver-plated chain that turned his neck green. He's seen through the "premium" that peels off in three months.</p><p>Yaani is the first brand speaking to <strong>jewellery fatigue, not jewellery skepticism</strong>. The guy who's already in, just waiting for something real.</p><p>Quiet confidence. Material truth. No performance.</p><p>---</p><p>## 3. THREE AD CONCEPTS TO RUN</p><p>### <strong>A) "THREE MONTHS IN"</strong><br><strong>Hook:</strong> *"Three months in, most chains show their truth. This one just shows its age."*</p><p><strong>Angle:</strong> Exploit the <strong>post-purchase regret</strong> every guy has experienced with plated jewellery. Open on a close-up of a silver-plated chain—flaking, green residue. Cut to a Yaani brass piece with natural patina, worn daily, still intact.</p><p>No voiceover. Just product truth and time. End card: "Brass. Honest from day one."</p><p><strong>Why it works:</strong> Hits the experienced buyer who's been burned. Doesn't convince—reminds. Positions Yaani as the thing you graduate *to*, not start with.</p><p>---</p><p>### <strong>B) "WHAT IT'S MADE OF"</strong><br><strong>Hook:</strong> *"Most brands bury this line. We lead with it."*</p><p><strong>Angle:</strong> Exploit <strong>category dishonesty</strong>. Open with a guy scrolling competitor product pages, squinting at fine print: "base metal," "alloy," "plated." Cut to Yaani site—"Brass" in big, unapologetic type.</p><p>Simple, confident product shots. No hype. Just the material, the make, the truth.</p><p>End card: "Brass doesn't hide. Neither do we."</p><p><strong>Why it works:</strong> Transparency is a flex when everyone else is vague. Turns material honesty into brand superiority. Appeals to guys who read labels and hate being sold to.</p><p>---</p><p>### <strong>C) "WORN, NOT NEW"</strong><br><strong>Hook:</strong> *"The only jewellery that looks better after a year than it does in the box."*</p><p><strong>Angle:</strong> Exploit the <strong>aging-as-upgrade</strong> truth of brass. Show side-by-side: fresh Yaani piece vs. one worn daily for 12 months. The patina, the character, the earned look.</p><p>No model face. Just hands, neck, wrist. Real wear. Real time.</p><p>End card: "It doesn't stay new. It gets yours."</p><p><strong>Why it works:</strong> Flips "tarnish" from a fear into a feature. Speaks to guys who value patina, heritage, realness—the ones already into raw denim, leather boots, mechanical watches. Jewellery as <strong>object with memory</strong>, not decoration.</p><p>---</p><p><strong>FINAL NOTE:</strong></p><p>Every competitor is sprinting toward the guy who doesn't wear jewellery yet. Yaani walks toward the guy who's tired of the shit that pretends. That's a smaller audience—and a better one.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function showTab(name, btn) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  function toggleBrand(idx) {
+    const body = document.getElementById('body-' + idx);
+    const chev = document.getElementById('chev-' + idx);
+    const open = body.classList.toggle('open');
+    chev.classList.toggle('open', open);
+  }
+
+  // Open first brand by default
+  toggleBrand(0);
+</script>
+
+</body>
+</html>

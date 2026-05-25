@@ -1,0 +1,45 @@
+name: Yaani Ad Radar — Weekly
+
+on:
+  schedule:
+    - cron: '30 2 * * 1'   # Every Monday 8:00 AM IST = 2:30 AM UTC
+  workflow_dispatch:         # Manual trigger from GitHub Actions tab
+
+permissions:
+  contents: write            # Needed to push updated dashboard back to repo
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browser
+        run: npx playwright install chromium --with-deps
+
+      - name: Run Ad Radar
+        run: node index.js
+        env:
+          CI:                 "true"
+          ANTHROPIC_API_KEY:  ${{ secrets.ANTHROPIC_API_KEY }}
+          GMAIL_USER:         ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          NOTIFY_EMAIL:       ${{ secrets.NOTIFY_EMAIL }}
+
+      - name: Push updated dashboard to GitHub Pages
+        run: |
+          git config user.name  "Yaani Bot"
+          git config user.email "bot@yaani.in"
+          git add docs/
+          git diff --staged --quiet || git commit -m "Update Ad Radar dashboard [skip ci]"
+          git push origin main
