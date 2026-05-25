@@ -282,8 +282,9 @@ async function scrapeCompetitor(page, competitor) {
 async function runScraper() {
   if (!fs.existsSync(ASSETS_DIR)) fs.mkdirSync(ASSETS_DIR, { recursive: true });
 
+  const isCI    = process.env.CI === 'true';
   const browser = await chromium.launch({
-    headless: false,   // visible browser — avoids Meta bot detection
+    headless: isCI,    // headless in CI, visible locally to avoid Meta bot detection
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
