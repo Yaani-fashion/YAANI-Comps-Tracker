@@ -273,9 +273,6 @@ function buildDashboard(analyses, strategy, generatedAt) {
     }
     .ad-copy {
       font-size: 12px; color: #888; line-height: 1.65;
-      max-height: 130px; overflow: hidden;
-      -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
-      mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
     }
     .ad-link {
       display: inline-block; margin-top: 10px; font-size: 11px; color: #444;
