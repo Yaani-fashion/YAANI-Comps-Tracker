@@ -13,7 +13,7 @@ async function sendIntelEmail(analyses, strategy) {
     hour: '2-digit', minute: '2-digit',
   });
 
-  const dashboardUrl = 'https://yaani-fashion.github.io/yaani-ad-radar/';
+  const dashboardUrl = 'https://yaani-fashion.github.io/YAANI-Comps-Tracker/';
 
   const competitorRows = analyses.filter(a => !a.error).map(a => `
     <div style="border-left:3px solid #e8b84b;padding:14px 18px;margin-bottom:16px;background:#fffdf5;border-radius:0 6px 6px 0;">
