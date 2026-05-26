@@ -18,7 +18,7 @@ function monthLabel(n) {
 function adCard(ad, idx) {
   const duration  = monthLabel(ad.months);
   const proven    = ad.months >= 6;
-  const mediaHtml = buildMedia(ad, idx);
+  const mediaHtml = buildMedia(ad);
 
   return `
   <div class="ad-card${proven ? ' proven' : ''}">
@@ -29,36 +29,20 @@ function adCard(ad, idx) {
         ${proven ? '<span class="star">proven performer</span>' : ''}
       </div>
       <div class="ad-copy">${safe(ad.copy).replace(/\n/g, '<br>')}</div>
-      ${ad.adUrl ? `<a class="ad-link" href="${safe(ad.adUrl)}" target="_blank" rel="noopener">View in Ads Library →</a>` : ''}
     </div>
   </div>`;
 }
 
-function buildMedia(ad, idx) {
-  if (ad.hasVideo) {
-    if (ad.videoUrl) {
-      const poster = ad.localPoster ? ` poster="${safe(ad.localPoster)}"` : '';
-      return `<div class="ad-media video-wrap">
-        <video controls${poster} preload="none" class="ad-video">
-          <source src="${safe(ad.videoUrl)}" type="video/mp4">
-        </video>
-        <span class="media-tag video-tag">VIDEO</span>
-      </div>`;
-    }
-    if (ad.localPoster) {
-      return `<div class="ad-media">
-        <img src="${safe(ad.localPoster)}" class="ad-img" alt="video ad thumbnail">
-        <span class="media-tag video-tag">VIDEO</span>
-      </div>`;
-    }
-  }
-  if (ad.localImage) {
-    return `<div class="ad-media">
-      <img src="${safe(ad.localImage)}" class="ad-img" alt="ad creative">
-      <span class="media-tag">IMAGE</span>
-    </div>`;
-  }
-  return `<div class="ad-media no-media"><span class="media-tag">NO PREVIEW</span></div>`;
+function buildMedia(ad) {
+  const type = ad.hasVideo ? 'VIDEO' : 'IMAGE';
+  const url  = ad.adUrl || '';
+  return `<a class="ad-preview-link" href="${safe(url)}" target="_blank" rel="noopener">
+    <div class="ad-preview-box">
+      <span class="preview-icon">${ad.hasVideo ? '▶' : '🖼'}</span>
+      <span class="preview-label">View ${type} on Meta Ads Library</span>
+      <span class="preview-arrow">↗</span>
+    </div>
+  </a>`;
 }
 
 function competitorSection(analysis, idx) {
@@ -244,22 +228,16 @@ function buildDashboard(analyses, strategy, generatedAt) {
     .ad-card.proven { border-color: #1a2e1a; }
     .ad-card.proven:hover { border-color: #2a4a2a; }
 
-    .ad-media { position: relative; background: #0a0a0a; }
-    .ad-img   { width: 100%; display: block; max-height: 280px; object-fit: cover; }
-    .ad-video { width: 100%; display: block; max-height: 280px; background: #000; }
-    .no-media {
-      height: 120px; display: flex; align-items: center; justify-content: center;
-      background: #111;
+    .ad-preview-link { text-decoration: none; display: block; }
+    .ad-preview-box {
+      background: #0a0a0a; border-bottom: 1px solid #1e1e1e;
+      padding: 16px 18px; display: flex; align-items: center; gap: 10px;
+      transition: background 0.15s;
     }
-    .video-wrap { position: relative; }
-
-    .media-tag {
-      position: absolute; bottom: 8px; left: 8px;
-      background: rgba(0,0,0,0.75); color: #666;
-      font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
-      padding: 3px 8px; border-radius: 4px;
-    }
-    .video-tag { color: #e8b84b; }
+    .ad-preview-link:hover .ad-preview-box { background: #141414; }
+    .preview-icon  { font-size: 18px; }
+    .preview-label { font-size: 12px; color: #666; flex: 1; }
+    .preview-arrow { font-size: 14px; color: #e8b84b; }
 
     .ad-body { padding: 14px 16px; }
     .ad-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }

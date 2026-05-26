@@ -229,31 +229,69 @@ async function scrapeCompetitor(page, competitor) {
     console.log(`      no 6+ month ads — showing top ${toProcess.length} longest-running instead`);
   }
 
+  // ── Screenshot ad card elements directly via Playwright ──────────────────
+  // Meta CDN requires auth cookies for full images — screenshotting the
+  // rendered element captures what the browser actually shows.
+  const cardScreenshots = await page.evaluate(() => {
+    const results = [];
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+    const seen = new WeakSet();
+    let node;
+    while ((node = walker.nextNode())) {
+      const t = node.textContent;
+      if (!/started running on/i.test(t) && !/\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2},\s+\d{4}/i.test(t)) continue;
+      let card = node.parentElement;
+      for (let i = 0; i < 15; i++) {
+        if (!card || !card.parentElement) break;
+        const r = card.getBoundingClientRect();
+        const pr = card.parentElement.getBoundingClientRect();
+        if (r.height > 250 && pr.height > r.height * 2) break;
+        card = card.parentElement;
+      }
+      if (!card || seen.has(card)) continue;
+      seen.add(card);
+      // Find the media element (img or video) within the card
+      const mediaEl = card.querySelector('video') || card.querySelector('img[src*="fbcdn"], img[src*="cdninstagram"]');
+      if (mediaEl) {
+        mediaEl.scrollIntoView();
+        results.push(true);
+      } else {
+        results.push(false);
+      }
+    }
+    return results;
+  });
+
+  // Now screenshot each card's media area
+  const adCardEls = await page.$$('div[role="main"] img[src*="fbcdn"], div[role="main"] img[src*="scontent"], div[role="main"] video');
+
   const filtered = [];
 
   for (const { raw, i, startDate, months } of toProcess) {
-    const startDateUnused = startDate; // already parsed above
-    if (false) continue;   // not old enough
-
     const hasVideo  = raw.videoUrls.length > 0;
 
-    // Download the best available image
-    let localImage  = null;
-    const imgUrl    = raw.images[0] || raw.posters[0] || null;
-    if (imgUrl) {
-      const ext      = imgUrl.includes('.png') ? 'png' : imgUrl.includes('.webp') ? 'webp' : 'jpg';
-      const destPath = path.join(compDir, `ad-${i}.${ext}`);
-      const ok       = await downloadFile(imgUrl, destPath);
-      if (ok) localImage = `assets/ads/${slug(competitor.name)}/ad-${i}.${ext}`;
-    }
+    // Screenshot the corresponding media element
+    let localImage = null;
+    try {
+      // Find image elements matching this ad's index
+      const mediaEls = hasVideo
+        ? await page.$$('video')
+        : await page.$$('img[src*="fbcdn"], img[src*="scontent"], img[src*="cdninstagram"]');
 
-    // For video ads download the poster separately if we don't already have it
+      const targetEl = mediaEls[i] || mediaEls[0];
+      if (targetEl) {
+        const destPath = path.join(compDir, `ad-${i}.png`);
+        await targetEl.scrollIntoViewIfNeeded();
+        await page.waitForTimeout(500);
+        await targetEl.screenshot({ path: destPath });
+        const stat = fs.statSync(destPath);
+        if (stat.size > 5000) { // must be a real image, not a tiny placeholder
+          localImage = `assets/ads/${slug(competitor.name)}/ad-${i}.png`;
+        }
+      }
+    } catch {}
+
     let localPoster = localImage;
-    if (hasVideo && !localPoster && raw.posters[0]) {
-      const destPath = path.join(compDir, `ad-${i}-poster.jpg`);
-      const ok       = await downloadFile(raw.posters[0], destPath);
-      if (ok) localPoster = `assets/ads/${slug(competitor.name)}/ad-${i}-poster.jpg`;
-    }
 
     // Pull the copy: strip the date line and page-name header noise
     const copy = raw.text
