@@ -184,9 +184,11 @@ async function scrapeCompetitor(page, competitor) {
         .filter(s => s && s.startsWith('http'));
       const posters = videoEls.map(v => v.poster).filter(p => p && p.startsWith('http'));
 
-      // Ad library deep-link
-      const adLink = card.querySelector('a[href*="ads/library"]');
-      const adUrl  = adLink ? adLink.href : '';
+      // Extract Library ID from text and build direct link
+      const libIdMatch = (card.innerText || '').match(/library\s+id[:\s]+(\d+)/i);
+      const adUrl = libIdMatch
+        ? `https://www.facebook.com/ads/library/?id=${libIdMatch[1]}`
+        : '';
 
       const text = (card.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 2500);
 
